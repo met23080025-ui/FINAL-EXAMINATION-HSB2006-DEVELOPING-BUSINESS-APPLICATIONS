@@ -1,0 +1,41 @@
+%% Activity Diagram — Complete Reservation Workflow
+%% Covers: login gate, date-window validation, availability check, table
+%% selection, pending creation, admin approve/reject decision, cancellation,
+%% and the completed/no_show terminal step. Matches FR-02..FR-06, FR-10..FR-11.
+
+flowchart TD
+    Start(["Start"])
+    A1["Customer opens booking page"]
+    D1{"Logged in?"}
+    A2["Redirect to Login page"]
+    A3["Select date, time slot, party size"]
+    D2{"Date valid? (today .. +30 days, not in the past)"}
+    A4["Show validation error"]
+    A5["Search tables: capacity is sufficient AND no non-cancelled booking for that date/slot"]
+    D3{"Table available?"}
+    A6["Show 'no table available' message"]
+    A7["Customer selects table and confirms"]
+    A8["System creates reservation, status = pending"]
+    A9["Admin reviews pending queue"]
+    D4{"Admin decision"}
+    A10["Status = confirmed, customer notified"]
+    A11["Status = rejected, customer notified"]
+    D5{"Customer cancels before reserved date/time?"}
+    A12["Status = cancelled"]
+    D6{"Reserved date/time has passed?"}
+    A13["Admin marks completed or no_show"]
+    EndNode(["End"])
+
+    Start --> A1 --> D1
+    D1 -- No --> A2 --> EndNode
+    D1 -- Yes --> A3 --> D2
+    D2 -- No --> A4 --> A3
+    D2 -- Yes --> A5 --> D3
+    D3 -- No --> A6 --> A3
+    D3 -- Yes --> A7 --> A8 --> A9 --> D4
+    D4 -- Reject --> A11 --> EndNode
+    D4 -- Approve --> A10 --> D5
+    D5 -- Yes --> A12 --> EndNode
+    D5 -- No --> D6
+    D6 -- Not yet --> D5
+    D6 -- Passed --> A13 --> EndNode

@@ -1,0 +1,54 @@
+%% Use Case Diagram — Golden Lotus Restaurant Reservation System
+%% Mermaid has no native UML use-case shape, so actors are drawn as circle
+%% nodes and use cases as stadium ("pill") nodes inside the system boundary,
+%% which is the standard Mermaid workaround for this diagram type.
+%% Every use case below maps 1:1 to a functional requirement (FR-xx) and a
+%% user story (US-xx) in docs/requirements.md.
+
+flowchart LR
+    Customer((Customer))
+    Admin((Admin))
+
+    subgraph System["Golden Lotus Reservation System"]
+        direction TB
+        UC1(["Register (FR-01)"])
+        UC2(["Login (FR-02)"])
+        UC3(["Logout (FR-02)"])
+        UC4(["Browse Table & Slot Availability (FR-03)"])
+        UC5(["Make Reservation (FR-04)"])
+        UC6(["View Reservation History (FR-05)"])
+        UC7(["Cancel Reservation (FR-06)"])
+        UC8(["Edit Profile / Change Password (FR-07)"])
+        UC9(["View Dashboard (FR-08)"])
+        UC10(["Search / Filter / Sort / Paginate Bookings (FR-09)"])
+        UC11(["Approve / Reject Booking (FR-10)"])
+        UC12(["Mark Completed / No-show (FR-11)"])
+        UC13(["Manage Tables - CRUD (FR-12)"])
+        UC14(["Manage Time Slots - CRUD (FR-13)"])
+        UC15(["Manage Users (FR-14)"])
+        UC16(["Generate Reports & Export CSV (FR-15)"])
+    end
+
+    Customer --- UC1
+    Customer --- UC2
+    Customer --- UC3
+    Customer --- UC4
+    Customer --- UC5
+    Customer --- UC6
+    Customer --- UC7
+    Customer --- UC8
+
+    Admin --- UC9
+    Admin --- UC10
+    Admin --- UC11
+    Admin --- UC12
+    Admin --- UC13
+    Admin --- UC14
+    Admin --- UC15
+    Admin --- UC16
+
+    UC5 -.->|"<<include>>"| UC4
+    UC11 -.->|"<<include>>"| UC10
+    UC12 -.->|"<<include>>"| UC10
+    UC7 -.->|"<<extend>>"| UC6
+    UC16 -.->|"<<extend>>"| UC9

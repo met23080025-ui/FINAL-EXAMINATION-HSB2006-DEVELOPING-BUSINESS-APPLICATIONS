@@ -1,0 +1,59 @@
+%% Sequence Diagram — Reservation Submission Through Admin Approval
+%% Participants match the planned code structure (book.php, helpers, PDO,
+%% admin/bookings.php). Includes the concurrent-duplicate failure path
+%% rejected by the database uniqueness constraint (FR-04, NFR-06).
+
+sequenceDiagram
+    actor Customer as Customer (Browser)
+    participant Book as book.php
+    participant Valid as helpers/validation
+    participant DB as PDO / Database
+    participant AdminPage as admin/bookings.php
+    actor AdminUser as Admin
+
+    Customer->>Book: POST reservation form (date, slot, party_size, notes, csrf_token)
+    Book->>Book: verify CSRF token
+
+    alt CSRF token invalid
+        Book-->>Customer: flash error, reload form
+    else CSRF token valid
+        Book->>Valid: validate_reservation_input(date, slot, party_size)
+        Valid-->>Book: validation result
+
+        alt validation fails
+            Book-->>Customer: flash validation error, redisplay form
+        else validation passes
+            Book->>DB: SELECT tables WHERE capacity >= party_size AND NOT EXISTS conflicting reservation
+            DB-->>Book: list of available tables
+
+            alt no table available
+                Book-->>Customer: flash "no table available for this date/slot"
+            else table available
+                Book->>DB: INSERT INTO reservations (..., status = 'pending')
+
+                alt unique constraint violation (concurrent duplicate booking)
+                    DB-->>Book: constraint error (table/date/slot already taken)
+                    Book-->>Customer: flash "table was just booked, choose another"
+                else insert succeeds
+                    DB-->>Book: new reservation id
+                    Book-->>Customer: flash "reservation submitted, pending approval"
+                end
+            end
+        end
+    end
+
+    AdminUser->>AdminPage: GET pending bookings queue
+    AdminPage->>DB: SELECT reservations WHERE status = 'pending'
+    DB-->>AdminPage: pending rows
+    AdminPage-->>AdminUser: render pending queue
+
+    AdminUser->>AdminPage: POST approve(reservation_id) + csrf_token
+    AdminPage->>AdminPage: verify CSRF token
+    AdminPage->>DB: UPDATE reservations SET status='confirmed', actioned_by, actioned_at WHERE id=? AND status='pending'
+    DB-->>AdminPage: rows affected
+    AdminPage-->>AdminUser: flash "booking confirmed"
+
+    Customer->>Book: GET my bookings
+    Book->>DB: SELECT reservations WHERE user_id = ?
+    DB-->>Book: rows including updated status
+    Book-->>Customer: render booking as "confirmed"

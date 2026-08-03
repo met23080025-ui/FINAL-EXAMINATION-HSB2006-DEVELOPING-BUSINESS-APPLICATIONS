@@ -35,7 +35,196 @@ every story to its FR and the marking-scheme criterion it evidences.
 Project board link: *(add once created — each user story becomes one issue)*
 
 ## 6. Use Case Diagram, data dictionary, Sequence Diagram, and Activity Diagram
-*(fill Phase P2)*
+
+### 6.1 Use Case Diagram
+Source: `docs/diagrams/use-case.mmd`
+
+```mermaid
+flowchart LR
+    Customer((Customer))
+    Admin((Admin))
+
+    subgraph System["Golden Lotus Reservation System"]
+        direction TB
+        UC1(["Register (FR-01)"])
+        UC2(["Login (FR-02)"])
+        UC3(["Logout (FR-02)"])
+        UC4(["Browse Table & Slot Availability (FR-03)"])
+        UC5(["Make Reservation (FR-04)"])
+        UC6(["View Reservation History (FR-05)"])
+        UC7(["Cancel Reservation (FR-06)"])
+        UC8(["Edit Profile / Change Password (FR-07)"])
+        UC9(["View Dashboard (FR-08)"])
+        UC10(["Search / Filter / Sort / Paginate Bookings (FR-09)"])
+        UC11(["Approve / Reject Booking (FR-10)"])
+        UC12(["Mark Completed / No-show (FR-11)"])
+        UC13(["Manage Tables - CRUD (FR-12)"])
+        UC14(["Manage Time Slots - CRUD (FR-13)"])
+        UC15(["Manage Users (FR-14)"])
+        UC16(["Generate Reports & Export CSV (FR-15)"])
+    end
+
+    Customer --- UC1
+    Customer --- UC2
+    Customer --- UC3
+    Customer --- UC4
+    Customer --- UC5
+    Customer --- UC6
+    Customer --- UC7
+    Customer --- UC8
+
+    Admin --- UC9
+    Admin --- UC10
+    Admin --- UC11
+    Admin --- UC12
+    Admin --- UC13
+    Admin --- UC14
+    Admin --- UC15
+    Admin --- UC16
+
+    UC5 -.->|"<<include>>"| UC4
+    UC11 -.->|"<<include>>"| UC10
+    UC12 -.->|"<<include>>"| UC10
+    UC7 -.->|"<<extend>>"| UC6
+    UC16 -.->|"<<extend>>"| UC9
+```
+
+Two actors, Customer and Admin, each with their own set of use cases, one per
+functional requirement (FR-01…FR-15; login/logout is FR-02 split into two use
+cases to mirror US-02/US-03). "Make Reservation" `<<include>>`s "Browse
+Availability" because a booking can never be created without first running
+the conflict/capacity check; "Approve/Reject" and "Mark Completed/No-show"
+both `<<include>>` the booking list because the admin always locates a
+booking there first. "Cancel Reservation" `<<extend>>`s "View Reservation
+History" (cancelling is an optional action available while browsing history,
+not something that happens every time), and "Generate Reports & Export CSV"
+`<<extend>>`s "View Dashboard" (the full date-range report is an optional
+deeper dive beyond the always-shown summary tiles).
+
+### 6.2 Data dictionary
+See `docs/data-dictionary.md` for the full table (`users`, `tables`,
+`time_slots`, `reservations`) — column names, data types, constraints, and
+descriptions, including the design note on `area` as an ENUM and the plan for
+the double-booking uniqueness constraint that Phase P3 implements.
+
+### 6.3 Activity Diagram — reservation workflow
+Source: `docs/diagrams/activity-booking.mmd`
+
+```mermaid
+flowchart TD
+    Start(["Start"])
+    A1["Customer opens booking page"]
+    D1{"Logged in?"}
+    A2["Redirect to Login page"]
+    A3["Select date, time slot, party size"]
+    D2{"Date valid? (today .. +30 days, not in the past)"}
+    A4["Show validation error"]
+    A5["Search tables: capacity is sufficient AND no non-cancelled booking for that date/slot"]
+    D3{"Table available?"}
+    A6["Show 'no table available' message"]
+    A7["Customer selects table and confirms"]
+    A8["System creates reservation, status = pending"]
+    A9["Admin reviews pending queue"]
+    D4{"Admin decision"}
+    A10["Status = confirmed, customer notified"]
+    A11["Status = rejected, customer notified"]
+    D5{"Customer cancels before reserved date/time?"}
+    A12["Status = cancelled"]
+    D6{"Reserved date/time has passed?"}
+    A13["Admin marks completed or no_show"]
+    EndNode(["End"])
+
+    Start --> A1 --> D1
+    D1 -- No --> A2 --> EndNode
+    D1 -- Yes --> A3 --> D2
+    D2 -- No --> A4 --> A3
+    D2 -- Yes --> A5 --> D3
+    D3 -- No --> A6 --> A3
+    D3 -- Yes --> A7 --> A8 --> A9 --> D4
+    D4 -- Reject --> A11 --> EndNode
+    D4 -- Approve --> A10 --> D5
+    D5 -- Yes --> A12 --> EndNode
+    D5 -- No --> D6
+    D6 -- Not yet --> D5
+    D6 -- Passed --> A13 --> EndNode
+```
+
+Traces the whole booking lifecycle end to end, with explicit decision points
+for every branch the grader can ask about at the viva: not logged in
+(redirect), an invalid date (past or beyond 30 days, loops back to the form),
+no table matching the party size (loops back to the form), the admin's
+approve/reject fork, the customer's cancel-before-the-reserved-time check,
+and the final admin action (`completed`/`no_show`) once the slot has passed.
+
+### 6.4 Sequence Diagram — booking submission through admin approval
+Source: `docs/diagrams/sequence-booking.mmd`
+
+```mermaid
+sequenceDiagram
+    actor Customer as Customer (Browser)
+    participant Book as book.php
+    participant Valid as helpers/validation
+    participant DB as PDO / Database
+    participant AdminPage as admin/bookings.php
+    actor AdminUser as Admin
+
+    Customer->>Book: POST reservation form (date, slot, party_size, notes, csrf_token)
+    Book->>Book: verify CSRF token
+
+    alt CSRF token invalid
+        Book-->>Customer: flash error, reload form
+    else CSRF token valid
+        Book->>Valid: validate_reservation_input(date, slot, party_size)
+        Valid-->>Book: validation result
+
+        alt validation fails
+            Book-->>Customer: flash validation error, redisplay form
+        else validation passes
+            Book->>DB: SELECT tables WHERE capacity >= party_size AND NOT EXISTS conflicting reservation
+            DB-->>Book: list of available tables
+
+            alt no table available
+                Book-->>Customer: flash "no table available for this date/slot"
+            else table available
+                Book->>DB: INSERT INTO reservations (..., status = 'pending')
+
+                alt unique constraint violation (concurrent duplicate booking)
+                    DB-->>Book: constraint error (table/date/slot already taken)
+                    Book-->>Customer: flash "table was just booked, choose another"
+                else insert succeeds
+                    DB-->>Book: new reservation id
+                    Book-->>Customer: flash "reservation submitted, pending approval"
+                end
+            end
+        end
+    end
+
+    AdminUser->>AdminPage: GET pending bookings queue
+    AdminPage->>DB: SELECT reservations WHERE status = 'pending'
+    DB-->>AdminPage: pending rows
+    AdminPage-->>AdminUser: render pending queue
+
+    AdminUser->>AdminPage: POST approve(reservation_id) + csrf_token
+    AdminPage->>AdminPage: verify CSRF token
+    AdminPage->>DB: UPDATE reservations SET status='confirmed', actioned_by, actioned_at WHERE id=? AND status='pending'
+    DB-->>AdminPage: rows affected
+    AdminPage-->>AdminUser: flash "booking confirmed"
+
+    Customer->>Book: GET my bookings
+    Book->>DB: SELECT reservations WHERE user_id = ?
+    DB-->>Book: rows including updated status
+    Book-->>Customer: render booking as "confirmed"
+```
+
+Shows the object-level round trip the code in Phase P6 must implement:
+`book.php` checks CSRF before anything else, then delegates validation to a
+shared helper, then queries availability, then inserts with the `pending`
+status. The nested `alt` block on the INSERT is the concurrency case the exam
+specifically requires — a second, near-simultaneous booking for the same
+table/date/slot is rejected by the database's own unique constraint, not just
+the PHP check, which is the proof point for NFR-06. The lower half shows the
+admin approving from the pending queue and the customer's next page load
+reflecting the new `confirmed` status.
 
 ## 7. Application architecture, technology stack, and database schema
 *(fill Phase P3)*
