@@ -251,7 +251,9 @@ that column. This makes the conflict check atomic at the database level
 cancelled/rejected slot be re-booked. Full rationale and the trigger-based
 alternative that was considered and rejected: `docs/data-dictionary.md` and
 the Vietnamese comment block above `CREATE TABLE reservations` in
-`database/schema.sql`.
+`database/schema.sql`. Live proof that this constraint actually fires against
+the seeded database (verbatim MySQL error, `information_schema` output, and
+exact reproduction steps for the demo/viva): `docs/evidence/double-booking-proof.md`.
 
 **Seed data:** `database/seed.sql` seeds 1 admin + 6 customer accounts (all
 sharing the demo password `Password123!`, stored as a real bcrypt hash — see
@@ -267,6 +269,14 @@ the admin queue demo.
 
 ## 9. Security controls and input-validation approach
 *(fill Phase P8)*
+
+Data-integrity control already captured ahead of P8: `docs/evidence/double-booking-proof.md`
+documents the live database-level proof that the double-booking constraint
+(the `uq_reservations_active_slot` unique index on the generated column
+`active_slot_key`) rejects a direct duplicate-insert attempt with MySQL error
+1062, run inside a rolled-back transaction against the real seeded database —
+not just a design claim. Includes exact reproduction steps to re-run live
+during the demo/viva.
 
 ## 10. Test plan, test cases, results, and unresolved defects
 *(fill Phase P8)*

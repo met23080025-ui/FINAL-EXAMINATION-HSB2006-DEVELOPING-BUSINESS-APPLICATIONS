@@ -37,6 +37,18 @@ manage users, and view booking reports.
 - HTML5, CSS3, Bootstrap 5 (CDN), vanilla JavaScript
 - No Node.js, no Firebase, no ORM
 
+## Verified local environment
+
+The environment below has been verified working (PDO connection, PHP-level
+`password_verify()`, and the database-level double-booking constraint all
+confirmed live — see `docs/evidence/double-booking-proof.md`):
+
+- XAMPP installed at `C:\xampp` (Apache + MySQL/MariaDB)
+- PHP 8.0.30 (`C:\xampp\php\php.exe`)
+- MySQL/MariaDB via XAMPP, database `golden_lotus`
+- Project served at `http://localhost/golden-lotus`
+- `BASE_URL` in `config.php` set to `/golden-lotus`
+
 ## Installation (local, XAMPP)
 
 1. Install [XAMPP](https://www.apachefriends.org/) and start **Apache** + **MySQL**.
@@ -76,6 +88,11 @@ All seeded accounts share the same demo password: **`Password123!`**
 
 *(to be updated as development progresses and in Phase P8/P9 — e.g. no payment
 processing, no email notifications, single-restaurant/single-branch only)*
+
+- The development environment runs **PHP 8.0.30**, which has reached its
+  official end-of-life. The codebase only targets PHP 8.x language syntax
+  (no version-specific features beyond 8.0) and is expected to run unmodified
+  on a currently supported PHP 8.2+ release.
 
 ## Third-party assets and licences
 

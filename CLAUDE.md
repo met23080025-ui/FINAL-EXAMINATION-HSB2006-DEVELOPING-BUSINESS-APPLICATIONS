@@ -82,6 +82,18 @@ PHP 8.x (procedural or lightweight OOP, no frameworks) · MySQL 8/MariaDB via XA
 PDO with prepared statements for 100% of queries · HTML5 + CSS3 + Bootstrap 5 (CDN) +
 vanilla JS · No Node.js, no Firebase, no ORM.
 
+## Verified local environment
+
+Confirmed working during Phase P3 verification (2026-08-03) — PDO connection,
+`password_verify()`, and the database-level double-booking constraint all
+proven live; see `docs/evidence/double-booking-proof.md`:
+
+- XAMPP installed at `C:\xampp` (Apache + MySQL/MariaDB running)
+- PHP 8.0.30 at `C:\xampp\php\php.exe`
+- MySQL/MariaDB via XAMPP, database `golden_lotus`
+- Project served at `http://localhost/golden-lotus`
+- `BASE_URL` in `config.php` set to `/golden-lotus`
+
 ## Marking scheme (guides every decision)
 
 | # | Criterion | Pts |

@@ -21,4 +21,4 @@ define('DB_CHARSET', 'utf8mb4');
 define('APP_DEBUG', true);
 
 // Đường dẫn gốc của ứng dụng, dùng cho các thẻ <a href="..."> và redirect (sửa lại nếu tên thư mục XAMPP khác)
-define('BASE_URL', '/Cuoiki');
+define('BASE_URL', '/golden-lotus');
