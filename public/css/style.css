@@ -1,0 +1,8 @@
+/*
+ * public/css/style.css
+ * File CSS tuỳ chỉnh, bổ sung cho Bootstrap 5 (không thay thế Bootstrap).
+ * Bảng màu và font chữ chính thức sẽ được chốt ở Phase P4 (docs/design-process.md)
+ * rồi áp dụng vào đây ở Phase P4b.
+ */
+
+/* TODO (Phase P4b): biến CSS cho bảng màu (:root { --brand-primary: ...; }) */

@@ -1,0 +1,19 @@
+# Cấu hình thật chứa mật khẩu database - KHÔNG BAO GIỜ commit file này
+config.php
+
+# File nén dùng để nộp bài (đóng gói thủ công ở Phase P9, không lưu trong git)
+*.zip
+
+# File log / file tạm của hệ điều hành và trình soạn thảo
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Dữ liệu cá nhân / ảnh chụp màn hình dung lượng lớn không cần thiết cho bài nộp
+/screenshots-raw/
+
+# Nếu XAMPP hoặc composer sinh ra các thư mục phụ thuộc (không dùng framework nhưng phòng khi cần)
+/vendor/
+/node_modules/
