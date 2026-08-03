@@ -9,11 +9,16 @@ the locked scope below.
 - Course: HSB2006 – Developing Business Applications, class MET4 (Hanoi School of
   Business and Management, VNU)
 - Graded project, 100 points, due 15 days from project start
-- Final submission filenames (fill in `<StudentID>` / `<FullName>` in Phase P9 —
-  **currently blank, must be filled before submission**):
-  - `HSB2006_MET4_<StudentID>_<FullName>_Report.pdf`
-  - `HSB2006_MET4_<StudentID>_<FullName>_Source.zip`
-  - `HSB2006_MET4_<StudentID>_<FullName>_Database.sql`
+- Repo owner / student ID: **23080025**, class **MET4**, GitHub account
+  **met23080025-ui**
+- Repository: https://github.com/met23080025-ui/FINAL-EXAMINATION-HSB2006-DEVELOPING-BUSINESS-APPLICATIONS
+- Final submission filenames (`<FullName>` still to be filled in — Phase P9):
+  - `HSB2006_MET4_23080025_<FullName>_Report.pdf`
+  - `HSB2006_MET4_23080025_<FullName>_Source.zip`
+  - `HSB2006_MET4_23080025_<FullName>_Database.sql`
+
+**Timeline note**: My Claude Pro plan expires 2026-08-05. Phases P1-P7 must be
+completed by then. Prioritise working code over polish.
 
 ## Team
 

@@ -4,19 +4,35 @@
 > Filled in progressively across phases (see CLAUDE.md roadmap) — do not leave until day 15.
 
 ## 1. Cover page and project identification
-*(course code HSB2006, class MET4, project title, team members + student IDs — fill Phase P1)*
+- Course: HSB2006 – Developing Business Applications, Class MET4
+- Project title: Golden Lotus Restaurant — Reservation System
+- Repo owner: Student ID 23080025 (GitHub: met23080025-ui) — *(full name + any
+  teammates' names/IDs to be added once the team table in
+  `docs/requirements.md` §11 is filled in)*
 
 ## 2. Executive summary and business problem
-*(fill Phase P1)*
+See `docs/requirements.md` §1–2 (Business problem, Project objectives). Summary:
+Golden Lotus currently takes reservations only by phone into a shared paper
+diary, causing double-bookings, no customer-facing record, wasted staff time,
+and no historical data for planning. This system replaces that with an online
+reservation flow with enforced conflict prevention and admin reporting.
 
 ## 3. Project scope, users, assumptions, and limitations
-*(fill Phase P1)*
+See `docs/requirements.md` §3–5 (Scope, Assumptions and limitations, Actors).
+Two actors: Customer and Admin. Full in-scope/out-of-scope feature lists and
+assumptions/limitations are documented there and must not be paraphrased
+differently here — copy verbatim when assembling the final report.
 
 ## 4. Functional and non-functional requirements
-*(fill Phase P1)*
+See `docs/requirements.md` §6–7: 15 functional requirements (FR-01…FR-15) and 6
+non-functional requirements (NFR-01…NFR-06) covering performance, security,
+usability, compatibility, maintainability, and data integrity.
 
 ## 5. User stories, acceptance criteria, and Project board link
-*(fill Phase P1)*
+See `docs/requirements.md` §8–9, §12–13: 16 user stories (US-01…US-16), each
+with Given/When/Then acceptance criteria, plus a traceability matrix mapping
+every story to its FR and the marking-scheme criterion it evidences.
+Project board link: *(add once created — each user story becomes one issue)*
 
 ## 6. Use Case Diagram, data dictionary, Sequence Diagram, and Activity Diagram
 *(fill Phase P2)*
