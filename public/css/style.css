@@ -1,8 +1,76 @@
 /*
  * public/css/style.css
  * File CSS tuỳ chỉnh, bổ sung cho Bootstrap 5 (không thay thế Bootstrap).
- * Bảng màu và font chữ chính thức sẽ được chốt ở Phase P4 (docs/design-process.md)
- * rồi áp dụng vào đây ở Phase P4b.
+ * Bảng màu, phông chữ và quy ước responsive/thông báo được chốt ở Phase P4
+ * (xem docs/design-process.md) — file này áp dụng các quyết định đó.
+ * Chưa có trang nào dùng file này (Phase P4 chỉ làm tài liệu + stylesheet nền),
+ * các lớp CSS cụ thể cho từng trang sẽ được thêm dần từ Phase P4b trở đi.
  */
 
-/* TODO (Phase P4b): biến CSS cho bảng màu (:root { --brand-primary: ...; }) */
+:root {
+  /* Bảng màu thương hiệu Golden Lotus — xem rationale trong docs/design-process.md §5 */
+  --gl-primary: #0b5d3b;      /* xanh lục đậm - header, nav, nút chính */
+  --gl-primary-dark: #073c26; /* xanh lục đậm hơn - hover/active của nút chính */
+  --gl-accent: #c9a227;       /* vàng gold - điểm nhấn, tiêu đề, hover */
+  --gl-accent-soft: #f4e7c1;  /* vàng nhạt - nền nhấn nhẹ */
+  --gl-text: #1f2a24;         /* màu chữ chính, gần đen pha xanh lục */
+  --gl-bg: #faf8f2;           /* nền trang - trắng ngà ấm, không dùng trắng tinh */
+
+  /* Phông chữ: không dùng webfont ngoài (xem lý do trong docs/design-process.md §7-8) */
+  --gl-font-heading: Georgia, "Times New Roman", serif;
+  --gl-font-body: var(--bs-body-font-family);
+}
+
+body {
+  background-color: var(--gl-bg);
+  color: var(--gl-text);
+  font-family: var(--gl-font-body);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--gl-font-heading);
+  color: var(--gl-primary);
+}
+
+a {
+  color: var(--gl-primary);
+}
+
+a:hover {
+  color: var(--gl-accent);
+}
+
+.navbar,
+.bg-gl-primary {
+  background-color: var(--gl-primary) !important;
+}
+
+.btn-gl-primary {
+  background-color: var(--gl-primary);
+  border-color: var(--gl-primary);
+  color: #fff;
+}
+
+.btn-gl-primary:hover,
+.btn-gl-primary:focus {
+  background-color: var(--gl-primary-dark);
+  border-color: var(--gl-primary-dark);
+  color: #fff;
+}
+
+.gl-accent-highlight {
+  background-color: var(--gl-accent-soft);
+}
+
+/*
+ * Nhãn trạng thái đặt chỗ (status badge) - dùng chung cho trang lịch sử đặt
+ * chỗ của khách và danh sách đặt chỗ của admin, để một trạng thái luôn hiển
+ * thị cùng một màu ở mọi màn hình (xem docs/design-process.md §5).
+ * Các lớp text-bg-* la san co cua Bootstrap 5; rieng no_show dung vien
+ * (outline) thay vi nen dac de phan biet voi rejected du ca hai deu la mau do.
+ */
+.badge-status-no-show {
+  color: #dc3545;
+  border: 1px solid #dc3545;
+  background-color: transparent;
+}
