@@ -188,8 +188,8 @@ sequenceDiagram
             else table available
                 Book->>DB: INSERT INTO reservations (..., status = 'pending')
 
-                alt unique constraint violation (concurrent duplicate booking)
-                    DB-->>Book: constraint error (table/date/slot already taken)
+                alt uq_reservations_active_slot violated (concurrent duplicate booking)
+                    DB-->>Book: constraint error on active_slot_key (table/date/slot already taken)
                     Book-->>Customer: flash "table was just booked, choose another"
                 else insert succeeds
                     DB-->>Book: new reservation id
@@ -227,7 +227,40 @@ admin approving from the pending queue and the customer's next page load
 reflecting the new `confirmed` status.
 
 ## 7. Application architecture, technology stack, and database schema
-*(fill Phase P3)*
+
+**Technology stack:** PHP 8.x (procedural/lightweight OOP, no framework),
+MySQL 8/MariaDB via XAMPP, PDO with prepared statements for all queries,
+HTML5 + CSS3 + Bootstrap 5 (CDN) + vanilla JavaScript. No Node.js, no
+Firebase, no ORM.
+
+**Database schema:** `database/schema.sql` creates the `golden_lotus`
+database (`utf8mb4_unicode_ci`) with four tables — `users`, `tables`,
+`time_slots`, `reservations` — exactly as specified in
+`docs/data-dictionary.md`. Foreign keys use `ON DELETE RESTRICT` for
+`user_id`/`table_id`/`time_slot_id` (records are deactivated via `is_active`,
+never deleted, so history is preserved) and `ON DELETE SET NULL` for
+`actioned_by`. Indexes: `reservations(reservation_date)`,
+`reservations(status)`, and the existing `UNIQUE` on `users.email`.
+
+**Double-booking constraint:** enforced by a `STORED` generated column,
+`reservations.active_slot_key`, which evaluates to `NULL` when `status` is
+`cancelled`/`rejected` and to `CONCAT(table_id,'_',reservation_date,'_',
+time_slot_id)` otherwise, with `UNIQUE KEY uq_reservations_active_slot` on
+that column. This makes the conflict check atomic at the database level
+(no check-then-write race under concurrent bookings) while still letting a
+cancelled/rejected slot be re-booked. Full rationale and the trigger-based
+alternative that was considered and rejected: `docs/data-dictionary.md` and
+the Vietnamese comment block above `CREATE TABLE reservations` in
+`database/schema.sql`.
+
+**Seed data:** `database/seed.sql` seeds 1 admin + 6 customer accounts (all
+sharing the demo password `Password123!`, stored as a real bcrypt hash — see
+README "Test accounts"), the 20 tables and 7 time slots locked in
+`CLAUDE.md`, and 57 reservations spanning `CURDATE() - 14 days` through
+`CURDATE() + 7 days` (computed relative to import time, not hard-coded, so
+the demo data stays current no matter when the file is re-imported) with a
+realistic status mix and a deliberate pending backlog on the next 2 days for
+the admin queue demo.
 
 ## 8. Implementation evidence — annotated screenshots
 *(fill progressively Phases P5-P7 — both customer and admin functions)*

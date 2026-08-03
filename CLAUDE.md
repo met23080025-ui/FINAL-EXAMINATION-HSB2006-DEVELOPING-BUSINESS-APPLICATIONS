@@ -67,11 +67,11 @@ language: English. Code comments: Vietnamese (see Coding Rules).
 
   Table search must filter `capacity >= party_size` and prefer the smallest
   sufficient table (so large tables stay free for large parties).
-- **Test accounts** (seed in `database/seed.sql`, document in README):
+- **Test accounts** (seeded in `database/seed.sql`, documented in README):
   - Admin: `admin@goldenlotus.test`
-  - Customer 1: `customer1@goldenlotus.test`
-  - Customer 2: `customer2@goldenlotus.test`
-  - (simple shared documented password — same across seed accounts)
+  - Customer 1–6: `customer1@goldenlotus.test` … `customer6@goldenlotus.test`
+  - Shared password: `Password123!` (stored only as a bcrypt hash, `$2y$`
+    prefix, never plaintext)
 - **Seed volume**: ~40–60 reservations spanning the past 14 days through the next 7
   days, realistic mix of all statuses, so dashboard/reports show meaningful demo data.
 - **No payments/currency** — reservation only, no billing.

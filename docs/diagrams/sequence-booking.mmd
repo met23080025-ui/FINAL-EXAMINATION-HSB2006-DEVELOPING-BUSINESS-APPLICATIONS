@@ -1,7 +1,9 @@
 %% Sequence Diagram — Reservation Submission Through Admin Approval
 %% Participants match the planned code structure (book.php, helpers, PDO,
 %% admin/bookings.php). Includes the concurrent-duplicate failure path
-%% rejected by the database uniqueness constraint (FR-04, NFR-06).
+%% rejected by the database uniqueness constraint (FR-04, NFR-06):
+%% UNIQUE KEY uq_reservations_active_slot on the generated column
+%% active_slot_key in database/schema.sql — see docs/data-dictionary.md.
 
 sequenceDiagram
     actor Customer as Customer (Browser)
@@ -31,8 +33,8 @@ sequenceDiagram
             else table available
                 Book->>DB: INSERT INTO reservations (..., status = 'pending')
 
-                alt unique constraint violation (concurrent duplicate booking)
-                    DB-->>Book: constraint error (table/date/slot already taken)
+                alt uq_reservations_active_slot violated (concurrent duplicate booking)
+                    DB-->>Book: constraint error on active_slot_key (table/date/slot already taken)
                     Book-->>Customer: flash "table was just booked, choose another"
                 else insert succeeds
                     DB-->>Book: new reservation id

@@ -57,15 +57,20 @@ manage users, and view booking reports.
 4. Import `database/seed.sql` second (adds sample data: tables, time slots, test
    accounts, and demo reservations).
 
-*(Both files are currently placeholders — populated in Phase P3 of development.)*
-
 ## Test accounts
+
+All seeded accounts share the same demo password: **`Password123!`**
+(stored as a real bcrypt hash in `database/seed.sql`, never plaintext).
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | admin@goldenlotus.test | *(set in Phase P3/P5 — documented here once seeded)* |
-| Customer | customer1@goldenlotus.test | *(same)* |
-| Customer | customer2@goldenlotus.test | *(same)* |
+| Admin | admin@goldenlotus.test | Password123! |
+| Customer | customer1@goldenlotus.test | Password123! |
+| Customer | customer2@goldenlotus.test | Password123! |
+| Customer | customer3@goldenlotus.test | Password123! |
+| Customer | customer4@goldenlotus.test | Password123! |
+| Customer | customer5@goldenlotus.test | Password123! |
+| Customer | customer6@goldenlotus.test | Password123! |
 
 ## Known limitations
 

@@ -66,16 +66,25 @@ Seeded with the 7 fixed 90-minute slots locked in `CLAUDE.md` (11:00 through 21:
 | actioned_at | DATETIME | NULL | When the admin action occurred |
 | created_at | DATETIME | NOT NULL, DEFAULT CURRENT_TIMESTAMP | Row creation time |
 | updated_at | DATETIME | NOT NULL, DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Last status/field change time |
+| active_slot_key | VARCHAR(50), GENERATED ALWAYS AS (...) STORED | NULL when `status IN ('cancelled','rejected')`, otherwise `CONCAT(table_id,'_',reservation_date,'_',time_slot_id)` | Generated column that backs the double-booking constraint (see below); not written to directly |
 
-**Double-booking constraint (FR-04, NFR-06):** a unique index on
-`(table_id, reservation_date, time_slot_id)` scoped to non-cancelled/
-non-rejected rows is required so the database itself rejects a duplicate
-active booking, while still allowing a new booking to reuse a slot that a
-prior `cancelled`/`rejected` row occupied. The exact mechanism (generated
-column that is `NULL` for cancelled/rejected rows, vs. a trigger) is decided
-and implemented in Phase P3 (`database/schema.sql`) per the `CLAUDE.md`
-instruction, and documented there with Vietnamese comments explaining the
-trade-off.
+**Double-booking constraint (FR-04, NFR-06) — implemented in Phase P3
+(`database/schema.sql`):** a `UNIQUE KEY uq_reservations_active_slot` sits on
+the generated column `active_slot_key`, not directly on `(table_id,
+reservation_date, time_slot_id)`. That column evaluates to `NULL` whenever
+`status` is `cancelled` or `rejected`, and to a `table_id_date_slot` string
+for every other status (`pending`, `confirmed`, `completed`, `no_show`).
+Because MySQL/MariaDB treat every `NULL` in a unique index as distinct from
+every other `NULL`, cancelled/rejected rows never block a new booking from
+reusing that table/date/slot, while any two rows that are both still "active"
+for the same table/date/slot collide immediately at `INSERT`/`UPDATE` time —
+enforced atomically by the storage engine, not by an application-level
+check-then-write race. A `BEFORE INSERT` trigger doing a manual `SELECT`
+check was considered and rejected for the same reason: the check and the
+write aren't atomic without extra manual locking, so a trigger alone would
+still permit two near-simultaneous inserts to both pass the check. Full
+trade-off discussion (in Vietnamese, as required by `CLAUDE.md`'s coding
+rules) is in the `reservations` table comment block in `database/schema.sql`.
 
 Planned indexes (beyond the PK/FKs): `reservations(reservation_date)`,
 `reservations(status)` — support FR-09 search/filter/sort/pagination and
