@@ -19,17 +19,67 @@
   /* Phông chữ: không dùng webfont ngoài (xem lý do trong docs/design-process.md §7-8) */
   --gl-font-heading: Georgia, "Times New Roman", serif;
   --gl-font-body: var(--bs-body-font-family);
+
+  /* Thang chữ (typography scale) - xem docs/design-process.md §5.3 */
+  --gl-fs-h1: 2.5rem;
+  --gl-lh-h1: 1.2;
+  --gl-fw-h1: 700;
+  --gl-fs-h2: 2rem;
+  --gl-lh-h2: 1.25;
+  --gl-fw-h2: 700;
+  --gl-fs-h3: 1.5rem;
+  --gl-lh-h3: 1.3;
+  --gl-fw-h3: 600;
+  --gl-fs-body: 1rem;
+  --gl-lh-body: 1.5;
+  --gl-fw-body: 400;
+  --gl-fs-small: 0.875rem;
+  --gl-lh-small: 1.4;
+
+  /* Thang khoảng cách (spacing scale) - xem docs/design-process.md §5.4 */
+  --gl-space-1: 0.25rem;
+  --gl-space-2: 0.5rem;
+  --gl-space-3: 1rem;
+  --gl-space-4: 1.5rem;
+  --gl-space-5: 2rem;
+  --gl-space-6: 3rem;
 }
 
 body {
   background-color: var(--gl-bg);
   color: var(--gl-text);
   font-family: var(--gl-font-body);
+  font-size: var(--gl-fs-body);
+  line-height: var(--gl-lh-body);
+  font-weight: var(--gl-fw-body);
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--gl-font-heading);
   color: var(--gl-primary);
+}
+
+h1 {
+  font-size: var(--gl-fs-h1);
+  line-height: var(--gl-lh-h1);
+  font-weight: var(--gl-fw-h1);
+}
+
+h2 {
+  font-size: var(--gl-fs-h2);
+  line-height: var(--gl-lh-h2);
+  font-weight: var(--gl-fw-h2);
+}
+
+h3 {
+  font-size: var(--gl-fs-h3);
+  line-height: var(--gl-lh-h3);
+  font-weight: var(--gl-fw-h3);
+}
+
+small, .small {
+  font-size: var(--gl-fs-small);
+  line-height: var(--gl-lh-small);
 }
 
 a {
@@ -68,9 +118,20 @@ a:hover {
  * thị cùng một màu ở mọi màn hình (xem docs/design-process.md §5).
  * Các lớp text-bg-* la san co cua Bootstrap 5; rieng no_show dung vien
  * (outline) thay vi nen dac de phan biet voi rejected du ca hai deu la mau do.
+ *
+ * background-color CO Y la #fff, KHONG phai transparent: do #dc3545 tren
+ * --gl-bg chi dat ty le tuong phan 4.26:1 (fail AA chu thuong), con tren nen
+ * trang la 4.53:1 (dat AA) - xem bang so lieu docs/design-process.md §5.2.
+ * Ep nen trang o day de dam bao dat AA du badge nay lo dat truc tiep len
+ * trang --gl-bg.
  */
 .badge-status-no-show {
   color: #dc3545;
   border: 1px solid #dc3545;
-  background-color: transparent;
+  background-color: #fff;
+}
+
+/* Vi du ap dung thang khoang cach (§5.4): khoang cach mac dinh giua cac khoi trong 1 card */
+.card-body > * + * {
+  margin-top: var(--gl-space-3);
 }
