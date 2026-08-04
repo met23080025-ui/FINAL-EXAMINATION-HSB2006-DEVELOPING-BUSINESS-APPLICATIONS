@@ -264,6 +264,26 @@ the demo data stays current no matter when the file is re-imported) with a
 realistic status mix and a deliberate pending backlog on the next 2 days for
 the admin queue demo.
 
+**Application layer infrastructure (Phase P4b):** every page shares five
+`includes/` files, required in this order: `db.php` (opens the PDO
+connection — `ERRMODE_EXCEPTION`, `EMULATE_PREPARES` off, default fetch
+mode `FETCH_ASSOC`), `helpers.php` (starts the session; `e()` for
+`htmlspecialchars` output escaping; `set_flash()`/`get_flashes()` for
+one-time Bootstrap alert messages; `csrf_token()`/`csrf_field()`/
+`csrf_verify()`; `redirect()`; `is_valid_email()`/`is_strong_password()`
+for registration validation), and `auth.php` (the role middleware:
+`current_user()`/`is_logged_in()`/`is_admin()` read `$_SESSION['user']`,
+and `require_login()`/`require_admin()` flash a message and redirect when
+the check fails — pages that need protection call these before any HTML
+output). `header.php`/`footer.php` render the shared Bootstrap 5 (CDN)
+shell: a role-aware navbar (guest/customer/admin see different links),
+the flash-message region, and the closing script tags
+(`bootstrap.bundle.min.js` + `public/js/main.js`). `auth.php` only reads
+session state — it does not depend on the login flow itself, which is
+built in Phase P5 (`auth/login.php` will write `$_SESSION['user']` after
+`password_verify()` succeeds). `index.php` was wired up to this shell as
+the first real page, proving the include chain end-to-end.
+
 ## 8. Implementation evidence — annotated screenshots
 *(fill progressively Phases P5-P7 — both customer and admin functions)*
 

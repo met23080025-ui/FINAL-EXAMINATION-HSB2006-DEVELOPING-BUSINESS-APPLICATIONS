@@ -135,3 +135,16 @@ a:hover {
 .card-body > * + * {
   margin-top: var(--gl-space-3);
 }
+
+/*
+ * Dai thong tin duoi man hinh dau (below-the-fold) tren trang chu - gio mo
+ * cua va cac khu vuc (docs/design-process.md §4.1). Dung --gl-space-6 cho
+ * khoang cach cap trang (tach hero va info band) va --gl-space-5 cho khoang
+ * cach giua cac khoi lon (giua tieu de va noi dung trong tung cot) - dung
+ * dung thang khoang cach da chot o §5.4, khong chon so tuy y.
+ */
+.gl-info-band {
+  margin-top: var(--gl-space-6);
+  padding: var(--gl-space-5) 0;
+  border-top: 1px solid var(--gl-accent-soft);
+}
