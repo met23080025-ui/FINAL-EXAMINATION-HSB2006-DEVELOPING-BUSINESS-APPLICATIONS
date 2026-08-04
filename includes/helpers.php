@@ -101,3 +101,75 @@ function is_strong_password(string $password): bool
         && preg_match('/[A-Za-z]/', $password) === 1
         && preg_match('/[0-9]/', $password) === 1;
 }
+
+/**
+ * Kiem tra dinh dang so dien thoai: cho phep dau "+" o dau, con lai la chu
+ * so, dau cach hoac dau gach ngang, tong 8-15 chu so sau khi bo ky tu trang
+ * tri (phu hop ca so Viet Nam 10 so lan so quoc te co ma vung).
+ */
+function is_valid_phone(string $phone): bool
+{
+    $digits_only = preg_replace('/[\s\-]/', '', $phone);
+    return preg_match('/^\+?[0-9]{8,15}$/', $digits_only) === 1;
+}
+
+/**
+ * Kiem tra mot duong dan "redirect" nguoi dung gui len (vd tu
+ * auth/login.php?redirect=...) co AN TOAN de dieu huong toi hay khong, tra
+ * ve duong dan da kiem chung (van con nguyen, chua ghep BASE_URL) neu hop
+ * le, hoac null neu khong hop le/vang mat — noi goi phai tu chon fallback
+ * (thuong la trang dashboard theo vai tro) khi ham nay tra ve null.
+ *
+ * LY DO (giai thich cho vien/viva): day la phong ve chong "open redirect".
+ * Neu ung dung dieu huong thang toi bat ky gia tri nao nguoi dung dua vao
+ * tham so ?redirect=, ke tan cong co the gui link dang
+ * "auth/login.php?redirect=https://evil.example" cho nan nhan; nan nhan thay
+ * domain that (goldenlotus) trong thanh dia chi luc dang nhap, dang nhap
+ * that, roi bi ung dung TU DONG chuyen sang trang gia mao ngay sau do — nan
+ * nhan de mat canh giac hon nhieu so voi bi gui thang link la tu dau vi ho
+ * vua tin tuong xong trang that. Day khong phai loi XSS/CSRF ma la loi "tin
+ * tuong nham" du lieu do nguoi dung kiem soat (redirect param) de quyet dinh
+ * dieu huong sau xac thuc.
+ *
+ * Chi chap nhan khi CA BON dieu kien sau deu dung (that bai bat ky dieu nao
+ * -> coi la khong hop le):
+ *   1) Bat dau bang DUY NHAT MOT dau "/" (khong phai "//..." - "//evil.com"
+ *      la URL "protocol-relative": trinh duyet tu dien lai bang scheme hien
+ *      tai va coi phan sau la MOT HOST KHAC, khong phai duong dan noi bo).
+ *   2) Khong chua "://" (loai truong hop nhu "/x://evil.com" co gang lach
+ *      qua kiem tra dau tien) va khong bat dau bang mot "scheme:" bat ky
+ *      (vd "/javascript:alert(1)").
+ *   3) Khong chua ky tu backslash "\" (mot so trinh duyet/thu vien coi "\"
+ *      tuong duong "/", nen "/\evil.com" co the bi hieu la "//evil.com" o
+ *      tang khac) va khong chua ky tu dieu khien (CR/LF...) de tranh header
+ *      injection khi ghep vao "Location:".
+ *   4) Sau khi qua 3 buoc tren, duong dan chi con la mot duong dan TUONG DOI
+ *      bat dau bang "/", va noi goi (redirect()) luon ghep no SAU BASE_URL
+ *      truoc khi dua vao header Location — nen ket qua cuoi cung chac chan
+ *      nam trong pham vi ung dung cua chinh minh, khong the "thoat ra" host
+ *      hay ung dung khac.
+ */
+function safe_redirect_target(?string $candidate): ?string
+{
+    if ($candidate === null || $candidate === '') {
+        return null;
+    }
+
+    if ($candidate[0] !== '/' || ($candidate[1] ?? '') === '/') {
+        return null;
+    }
+
+    if (str_contains($candidate, '\\') || str_contains($candidate, '://')) {
+        return null;
+    }
+
+    if (preg_match('/[\x00-\x1F\x7F]/', $candidate) === 1) {
+        return null;
+    }
+
+    if (preg_match('#^/[a-zA-Z][a-zA-Z0-9+.\-]*:#', $candidate) === 1) {
+        return null;
+    }
+
+    return $candidate;
+}

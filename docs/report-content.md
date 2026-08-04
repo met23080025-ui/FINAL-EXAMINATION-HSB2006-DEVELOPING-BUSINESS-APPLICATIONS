@@ -288,7 +288,52 @@ the first real page, proving the include chain end-to-end.
 *(fill progressively Phases P5-P7 — both customer and admin functions)*
 
 ## 9. Security controls and input-validation approach
-*(fill Phase P8)*
+
+**Authentication (Phase P5 — `auth/register.php`, `auth/login.php`,
+`auth/logout.php`, `customer/profile.php`):**
+
+- Passwords are hashed with `password_hash($password, PASSWORD_DEFAULT)`
+  and checked with `password_verify()`; the plaintext value is never
+  logged, echoed, or stored. Registration enforces a minimum-strength rule
+  (`is_strong_password()` in `includes/helpers.php`: ≥8 characters, at
+  least one letter and one digit) server-side, in addition to the
+  client-side `minlength` hint.
+- Login returns the same generic *"Invalid email or password."* message
+  whether the email doesn't exist or the password is wrong, and always
+  calls `password_verify()` against a dummy bcrypt hash when no matching
+  user is found — both measures defend against user enumeration (an
+  attacker probing which emails are registered), the second one closing
+  the timing side-channel the first alone wouldn't.
+- A successful login calls `session_regenerate_id(true)` immediately
+  (session-fixation defence) before writing `$_SESSION['user']`. A locked
+  account (`is_active = 0`) is refused login with a distinct, clear
+  message once credentials are otherwise correct.
+- **Open-redirect defence:** the homepage's "Book a Table" CTA sends
+  signed-out visitors to `auth/login.php?redirect=/customer/book.php` so
+  they land back where they meant to go after authenticating. That
+  `redirect` value is attacker-controllable input, so it is never used
+  directly — `safe_redirect_target()` (`includes/helpers.php`) only
+  accepts it if it starts with a single `/` (rejects `//host` protocol-relative
+  URLs), contains no `://` or scheme prefix, and contains no backslash or
+  control characters; anything else silently falls back to the
+  role-based dashboard. Manually verified with three payloads
+  (`https://evil.example`, `//evil.example`, `/\evil.example`) — all three
+  are dropped and the login instead lands on the normal dashboard; see the
+  full Vietnamese rationale comment above the function.
+- Every state-changing form (register, login, logout, profile update,
+  password change) carries a CSRF token (`csrf_field()`/`csrf_verify()`,
+  `hash_equals()` comparison) checked before any other processing.
+- `customer/dashboard.php` calls `require_login()` and
+  `admin/dashboard.php` calls `require_admin()` — manually verified that
+  an unauthenticated request to either is redirected to login, and that a
+  logged-in customer hitting `admin/dashboard.php` is redirected away
+  rather than shown the page.
+- Profile email edits re-check uniqueness excluding the user's own row
+  (`WHERE email = ? AND id != ?`); password changes require the correct
+  current password (`password_verify()`) before a new hash is written.
+
+*(remaining sections — input validation for the booking workflow, admin
+CRUD, and the full defect list — fill progressively through Phase P8.)*
 
 Data-integrity control already captured ahead of P8: `docs/evidence/double-booking-proof.md`
 documents the live database-level proof that the double-booking constraint
