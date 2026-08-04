@@ -6,7 +6,7 @@
  *
  * Phase P5: chỉ là trang placeholder tối thiểu để chứng minh require_login()
  * và luồng chuyển hướng theo vai trò từ auth/login.php hoạt động đúng. Nội
- * dung thật (tổng quan đặt bàn, lối tắt tới book.php/my-bookings.php) sẽ
+ * dung thật (tổng quan đặt bàn, lối tắt tới book.php/my-reservations.php) sẽ
  * được xây ở Phase P6.
  */
 

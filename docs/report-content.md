@@ -284,6 +284,54 @@ built in Phase P5 (`auth/login.php` will write `$_SESSION['user']` after
 `password_verify()` succeeds). `index.php` was wired up to this shell as
 the first real page, proving the include chain end-to-end.
 
+**The core business workflow (Phase P6 — `includes/reservation.php`,
+`customer/book.php`, `customer/my-reservations.php`, `admin/bookings.php`):**
+all reservation logic lives in five functions in `includes/reservation.php`,
+so every page that touches a reservation's availability or status goes
+through the same code rather than re-implementing it:
+
+- `get_available_tables()` — active tables with sufficient capacity and no
+  conflicting `pending`/`confirmed` booking for the requested date/slot,
+  ordered by capacity ascending (smallest sufficient table first, per the
+  locked business rule — keeps large tables free for large parties).
+- `is_slot_bookable()` — rejects past dates, dates past the 30-day window,
+  and (for today) slots whose start time has already passed, always
+  against server time (`DateTimeImmutable('now')`), never client input.
+- `create_reservation()` — wraps the `INSERT` in a transaction and catches
+  a `uq_reservations_active_slot` violation (`SQLSTATE[23000]`/MySQL 1062)
+  as a normal "that table was just taken" result rather than letting a
+  500 error surface; see `docs/evidence/double-booking-proof.md` §7 for
+  the full UI-level reproduction and an important nuance discovered while
+  writing it: `customer/book.php` also re-checks availability with a plain
+  `SELECT` immediately before calling this function, so in practice that
+  cheaper check catches almost every real double-submit before the
+  `INSERT` is even attempted — the constraint-violation path this function
+  handles is the last-resort net for the narrower race between that
+  `SELECT` and the `INSERT`, which is what the CLI-based proof in that same
+  document exercises directly.
+- `can_transition()` — the single source of truth for the status lifecycle
+  locked in `CLAUDE.md` (`pending → confirmed|rejected|cancelled`,
+  `confirmed → completed|no_show|cancelled`, all other states terminal).
+  Every status change, from either the customer (cancel) or admin
+  (approve/reject/complete/no-show) side, is routed through
+  `change_reservation_status()`, which calls this — no page updates
+  `reservations.status` directly.
+- `change_reservation_status()` — validates via `can_transition()`, locks
+  the target row with `SELECT ... FOR UPDATE` inside a transaction (so two
+  near-simultaneous status changes on the same reservation can't both read
+  the same stale status), records `actioned_by`/`actioned_at`.
+
+`customer/book.php` follows the search-then-select flow locked in
+`docs/design-process.md` §4.3 (date/party size/slot chosen together before
+searching; table chosen only from the results) via GET for the idempotent
+search and POST for the state-changing confirm (PRG pattern per §7),
+re-validating the submitted `table_id` against a fresh
+`get_available_tables()` call rather than trusting the form. Both
+`customer/my-reservations.php`'s cancel action and `admin/bookings.php`'s
+approve/reject/complete/no-show actions enforce their eligibility rules
+(ownership, status, and — for cancel — that the reservation is still in
+the future) server-side, not merely by hiding the button in the UI.
+
 ## 8. Implementation evidence — annotated screenshots
 *(fill progressively Phases P5-P7 — both customer and admin functions)*
 

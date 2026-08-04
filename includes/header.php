@@ -48,7 +48,7 @@ $active_title  = isset($page_title) ? $page_title . ' - Golden Lotus Restaurant'
                 <?php else: ?>
                     <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/customer/dashboard.php">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/customer/book.php">Book a Table</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/customer/my-bookings.php">My Bookings</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/customer/my-reservations.php">My Reservations</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/customer/profile.php">Profile</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/auth/logout.php">Logout (<?= e($current_user['full_name']) ?>)</a></li>
                 <?php endif; ?>
