@@ -360,9 +360,16 @@ a:hover {
 }
 
 .gl-bar-row {
+  --gl-bar-row-delay: calc(var(--gl-row-i, 0) * 70ms + 300ms);
+}
+
+/* Mau an toan (xem giai thich day du o khoi ".gl-reveal" trong style.css) -
+   nhan/gia tri cua bieu do van hien ngay ca khi khong co JS; chi mo dan khi
+   html.js-ready co mat. */
+html.js-ready .gl-bar-row {
   opacity: 0;
-  animation: gl-fade-in-up var(--gl-t-base) ease forwards;
-  animation-delay: calc(var(--gl-row-i, 0) * 70ms + 300ms);
+  animation: gl-fade-in-up var(--gl-t-base) forwards;
+  animation-delay: var(--gl-bar-row-delay);
 }
 
 /* Trang thai rong (empty state) - "trong deliberate, khong giong bi hong".
@@ -455,8 +462,13 @@ a:hover {
   box-shadow: 0 0 0 4px rgba(201, 162, 39, 0.22);
 }
 
-.invalid-feedback {
-  animation: gl-fade-in-down var(--gl-t-base) ease both;
+/* Mau an toan (xem giai thich day du o khoi ".gl-reveal" trong style.css) -
+   day la thong bao loi validate, TUYET DOI khong duoc phep vo hinh; Bootstrap
+   da tu an/hien .invalid-feedback qua class .is-invalid tren o nhap ben canh
+   (khong lien quan JS), nen o day CHI them hoat hinh mo dan luc no da hien,
+   khong bao gio tu dat opacity:0 khong dieu kien. */
+html.js-ready .invalid-feedback {
+  animation: gl-fade-in-down var(--gl-t-base) both;
 }
 
 /*
@@ -533,7 +545,13 @@ a:hover {
   border-left: 5px solid var(--gl-primary);
   padding: var(--gl-space-3) var(--gl-space-4);
   padding-right: 2.5rem;
-  animation: gl-toast-in var(--gl-t-base) ease both;
+  /* Khong lap easing sau var(--gl-t-base) - token do da la "250ms ease" ghep
+     san; lap them "ease" bien ca khai bao animation thanh cu phap sai (hai
+     easing trong cung 1 animation) va bi trinh duyet bo qua toan bo, khien
+     public/js/main.js khong bao gio nhan duoc su kien "animationend" de go
+     toast khoi DOM khi dong/tu dong tat - xem giai thich day du o khoi
+     ".gl-reveal" phia tren. */
+  animation: gl-toast-in var(--gl-t-base) both;
 }
 
 .gl-toast-success { border-left-color: #198754; }
@@ -581,7 +599,7 @@ a:hover {
 }
 
 .gl-toast.is-leaving {
-  animation: gl-fade-in-down var(--gl-t-base) ease reverse both;
+  animation: gl-fade-in-down var(--gl-t-base) reverse both;
 }
 
 /* ---- Hero trang chu ---- */
@@ -622,13 +640,22 @@ a:hover {
   color: #fff;
 }
 
-.gl-hero .gl-hero-enter {
+/* Mau an toan (xem giai thich day du o khoi ".gl-reveal" phia duoi trong
+   file nay) - tieu de/CTA cua hero la noi dung QUAN TRONG NHAT tren trang
+   chu, nen dut khoat khong duoc phep dua vao JS de "hien ra". Khong dung
+   var(--gl-t-base) o day (dung 700ms rieng) nen khong dinh loi easing-kep,
+   nhung van gan sau html.js-ready de nhat quan voi moi hoat hinh "an-roi-
+   hien" khac trong he thong va phong truoc loi tuong tu trong tuong lai. */
+html.js-ready .gl-hero .gl-hero-enter {
   opacity: 0;
   animation: gl-fade-in-up 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.gl-hero .gl-hero-enter-delay-1 { animation-delay: 120ms; }
-.gl-hero .gl-hero-enter-delay-2 { animation-delay: 260ms; }
+/* Cung gan sau html.js-ready VA giu specificity >= quy tac goc phia tren -
+   neu khong, quy tac goc (co animation-delay:0s ngam dinh trong shorthand)
+   se de len tren hai dong nay do specificity cao hon, xoa mat do le. */
+html.js-ready .gl-hero .gl-hero-enter-delay-1 { animation-delay: 120ms; }
+html.js-ready .gl-hero .gl-hero-enter-delay-2 { animation-delay: 260ms; }
 
 .gl-hero .btn-light {
   border-radius: var(--gl-radius-sm);
@@ -681,17 +708,49 @@ a:hover {
   height: 100%;
 }
 
-/* ---- Scroll-reveal (IntersectionObserver) - AN CHI KHI co class .js-enabled tren <html>,
-   nen phai co JS moi bi an; khong co JS thi noi dung hien san = dung yeu cau
-   "visible by default when JS is off". ---- */
+/*
+ * ============================================================================
+ * MAU AN TOAN CHUNG cho moi hoat hinh "an roi hien dan" (fail-safe reveal
+ * pattern) - ap dung cho .gl-reveal, .gl-table-card, .gl-bar-row,
+ * .invalid-feedback, .gl-hero-enter ben duoi.
+ *
+ * SU CO THUC TE dan den quy tac nay (2026-08-05): .gl-table-card,
+ * .gl-bar-row va .invalid-feedback truoc day khai bao opacity:0 TRUC TIEP
+ * (khong dieu kien) roi dua vao MOT animation CSS de dua opacity ve 1. Bug:
+ * --gl-t-base/--gl-t-fast (dinh nghia o :root) da la gia tri GHEP SAN
+ * "<thoi luong> <easing>" (vd "250ms ease"), nhung cac khai bao animation do
+ * lai viet THEM mot tu khoa easing rieng phia sau var(...), vd
+ * "animation: gl-fade-in-up var(--gl-t-base) ease forwards" khai trien
+ * thanh "gl-fade-in-up 250ms ease ease forwards" - HAI gia tri easing trong
+ * CUNG MOT animation la cu phap SAI theo dac ta CSS; khi mot phan cua
+ * shorthand animation khong hop le, trinh duyet bo qua TOAN BO khai bao đo
+ * (khong ap dung mot phan), nen animation khong bao gio chay va opacity:0
+ * o tren khong bao gio duoc dua ve 1 - ket qua: the ban tren book.php (va
+ * cac phan tu khac dung chung mau nay) bi "ket" vo hinh vinh vien, DU
+ * KHONG CO loi JavaScript nao xay ra - day la loi CSS thuan tuy.
+ *
+ * Sua goc: bo tu khoa easing thua (var() da mang san). CONG THEM mot lop an
+ * toan thu hai, doc lap voi nguyen nhan tren: MOI trang thai "an mac dinh"
+ * gio CHI duoc ap dung khi <html> co class "js-ready" - class nay la DONG
+ * LENH DAU TIEN cua public/js/main.js (chay dong bo, truoc ca
+ * DOMContentLoaded), nen no chi co mat khi file JS thuc su bat dau thuc thi
+ * (khong bi loi tai/parse). Neu KHONG co class do (JS tat, file loi 404,
+ * hoac bat ky loi nao trong tuong lai xay ra truoc dong lenh dau tien - kho
+ * xay ra nhung khong phai khong the), trinh duyet don gian KHONG AP DUNG bo
+ * quy tac "an" nay - phan tu giu nguyen trang thai HIEN MAC DINH cua HTML
+ * (opacity: 1 ngam dinh), khong co class nao khac can gan them. Noi cach
+ * khac: that bai an toan la "khong co hoat hinh", khong bao gio la
+ * "noi dung bien mat".
+ * ============================================================================
+ */
 
-html.js-enabled .gl-reveal {
+html.js-ready .gl-reveal {
   opacity: 0;
   transform: translateY(20px);
   transition: opacity 600ms ease, transform 600ms ease;
 }
 
-html.js-enabled .gl-reveal.is-visible {
+html.js-ready .gl-reveal.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
@@ -754,8 +813,13 @@ html.js-enabled .gl-reveal.is-visible {
   border-radius: var(--gl-radius-md);
   box-shadow: var(--gl-shadow-1);
   transition: transform var(--gl-t-base), box-shadow var(--gl-t-base), border-color var(--gl-t-base);
+}
+
+/* Mau an toan (xem giai thich day du o khoi ".gl-reveal" phia tren) - hien
+   SAN theo mac dinh; chi an+hien dan khi html.js-ready co mat. */
+html.js-ready .gl-table-card {
   opacity: 0;
-  animation: gl-fade-in-up var(--gl-t-base) ease forwards;
+  animation: gl-fade-in-up var(--gl-t-base) forwards;
   animation-delay: calc(var(--gl-row-i, 0) * 60ms);
 }
 

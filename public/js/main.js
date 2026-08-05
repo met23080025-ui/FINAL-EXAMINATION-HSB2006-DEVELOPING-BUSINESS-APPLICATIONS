@@ -4,11 +4,21 @@
  * KHÔNG thay thế cho validate phía server (bắt buộc theo yêu cầu bảo mật).
  */
 
-// Vietnamese: gan class nay NGAY (khong doi DOMContentLoaded) de CSS chi an
-// noi dung ".gl-reveal" (scroll-reveal) khi THAT SU co JS chay - neu JS bi
-// tat, class nay khong bao gio xuat hien nen CSS khong an gi ca, noi dung
-// hien san = dung yeu cau "visible by default when JS is off".
-document.documentElement.classList.add('js-enabled');
+// Vietnamese: gan class nay NGAY (dong lenh DAU TIEN cua toan bo file, truoc
+// ca DOMContentLoaded) - day la "co so" cho MOI mau an-roi-hien-dan trong
+// public/css/style.css (.gl-reveal, .gl-table-card, .gl-bar-row,
+// .invalid-feedback, .gl-hero-enter...): CSS chi an truoc mot noi dung khi
+// <html> co class "js-ready". Neu JS bi tat, script loi tai (404, chan boi
+// trinh duyet...), hoac bat ky loi nao xay ra TRUOC dong lenh nay, class do
+// khong bao gio xuat hien -> CSS khong an gi ca -> noi dung hien SAN. Day la
+// bai hoc rut ra tu su co "the ban tren book.php vo hinh" (2026-08-05, xem
+// docs/development-log.md): nguyen nhan that su hom do la mot loi CU PHAP
+// CSS (hai gia tri easing trong cung mot khai bao animation) khien opacity:0
+// khong bao gio duoc dua ve 1 - khong lien quan JS - nhung quy tac "an mac
+// dinh, JS moi duoc THEM hoat hinh" nay van duoc ap dung o day de bat ky loi
+// TUONG TU nao trong tuong lai (CSS hay JS) chi lam mat hoat hinh, khong bao
+// gio lam mat noi dung.
+document.documentElement.classList.add('js-ready');
 
 document.addEventListener('DOMContentLoaded', function () {
     // Vietnamese: doc mot lan, dung lai o nhieu hieu ung ben duoi thay vi goi
@@ -213,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Scroll-reveal cho noi dung duoi man hinh dau (index.php) - IntersectionObserver
     // chi THEM class hien (.is-visible), khong bao gio an noi dung neu trinh
     // duyet khong ho tro API nay (kiem tra 'IntersectionObserver' in window).
-    // CSS chi an noi dung khi <html> co class "js-enabled" (luon co vi dong
+    // CSS chi an noi dung khi <html> co class "js-ready" (luon co vi dong
     // dau file gan class do ngay lap tuc) VA phan tu chua nhan ".is-visible" -
     // neu ca doan script nay khong chay duoc vi ly do gi, noi dung se ket
     // thuc o trang thai "an" - vi vay bat buoc kiem tra ho tro truoc khi dung.

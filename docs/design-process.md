@@ -581,3 +581,60 @@ restriction.
   JS listener still mirrors the same state into an `.is-selected` class as
   a low-cost belt-and-suspenders measure, not because `:has()` is expected
   to fail.
+
+### 9.8 Post-release fix: invisible table cards, and the fail-safe reveal pattern
+
+**Bug (2026-08-05, found in production use, not caught before shipping):**
+`customer/book.php`'s search results rendered an available table for every
+qualifying row, but every card stayed fully transparent — the layout space
+was reserved (borders/padding/height all correct) but nothing was ever
+visible to click. Root cause was a CSS authoring mistake, not a JavaScript
+error: `--gl-t-base`/`--gl-t-fast` (§9.1) are defined as a **composite**
+value, `"250ms ease"` (duration *and* easing together), specifically so
+they drop cleanly into a `transition:` shorthand (`transition: box-shadow
+var(--gl-t-base)` → `transition: box-shadow 250ms ease`, valid). Several
+`animation:` shorthand declarations — `.gl-table-card`, `.gl-bar-row`,
+`.invalid-feedback`, `.gl-toast`, `.gl-toast.is-leaving` — additionally
+appended a literal `ease` keyword after the `var()`, e.g. `animation:
+gl-fade-in-up var(--gl-t-base) ease forwards`, which expands to `250ms
+ease ease forwards` — **two** easing-function values in one animation
+definition. That's invalid per the CSS animation shorthand grammar (each
+component may appear once), and per standard CSS error handling, an
+invalid shorthand value is dropped **in its entirety**, not partially
+applied. The `animation` property therefore never took effect at all, so
+the separately-declared `opacity: 0` on those elements was never overridden
+by anything — a fully unrelated-looking symptom (invisible content) traced
+back to a single mistyped shorthand.
+
+**Fix, two layers:**
+1. Removed the redundant easing keyword everywhere `var(--gl-t-base)`/
+   `var(--gl-t-fast)` appears inside an `animation:` shorthand — the token
+   already supplies it.
+2. Generalised the fail-safe pattern the scroll-reveal feature (§9's
+   original `.gl-reveal` design) already used correctly, to every
+   "hidden-then-revealed" element in the system: `.gl-reveal`,
+   `.gl-table-card`, `.gl-bar-row`, `.invalid-feedback`, and
+   `.gl-hero-enter` no longer declare `opacity: 0` unconditionally. Each
+   now has a plain, always-visible base rule plus a separate
+   `html.js-ready <selector>` rule that adds the hidden-then-animate
+   treatment — and `js-ready` is added to `<html>` as the literal first
+   statement of `public/js/main.js`, before `DOMContentLoaded`. If that
+   class is ever absent (JS disabled, blocked, 404, or any future error
+   occurring before that first line runs), none of the hiding rules match
+   anything, and content falls back to plain HTML's default `opacity: 1`
+   — no second mechanism required, nothing to remember to wire up per
+   component. This was already the documented design for `.gl-reveal`
+   (§9.5); the bug above was that four other components didn't follow it,
+   layered on top of the shorthand mistake. Both issues are now fixed
+   together, and every current "reveal" component in the codebase follows
+   one pattern.
+
+**Why this matters beyond the one bug:** the two failure causes are
+independent — fixing the shorthand alone would have restored the visible
+cards without adding any defence against the *next* mistake, and the
+`js-ready` gating alone (without the shorthand fix) would not have fixed
+anything, since the bug here was never actually about JavaScript failing.
+Doing both means a future CSS typo in one of these rules degrades to "the
+element doesn't animate" (still fully visible, just static) rather than
+silently repeating this incident. Full technical writeup, root-cause
+reasoning, and the live verification performed: `docs/development-log.md`.

@@ -307,6 +307,108 @@ were left untouched — they were never part of the AI-driven testing and
 were identified as such before any deletion, not assumed safe. Database
 totals after cleanup: 8 users, 60 reservations.
 
+## Phase P7.7 — Bugfix: invisible table cards on customer/book.php
+**Commit:** `5bf9562` (2026-08-05) — *fix: invisible table cards on book.php - invalid animation shorthand*
+
+**User report:** search on `customer/book.php` returned results (layout
+space reserved, Notes/Confirm section rendered) but every table card was
+invisible — reported as "almost certainly" the Phase P7.6 staggered
+fade-in, with a hypothesis that `main.js` was erroring out before adding a
+visibility class.
+
+**What was actually true vs. the hypothesis:** the visibility symptom was
+correct, but the mechanism wasn't — `.gl-table-card`'s reveal animation was
+never coupled to a JS-added class in the first place; it was a pure CSS
+`animation: ... forwards` declaration, so a JS error couldn't have been
+the direct cause. Traced every handler in `main.js` against `book.php`'s
+actual DOM (toast handling, table-card selection sync, count-up, bar
+animation, scroll-reveal) and found no code path that throws on that page
+— elements with zero matches simply no-op, and the ones that do match
+(toast, table-card sync) have nothing in them that can throw. Said so
+plainly rather than inventing a JS fix for a bug that wasn't there.
+
+**Actual root cause:** a CSS shorthand authoring mistake. `--gl-t-base`/
+`--gl-t-fast` (`public/css/style.css` `:root`) are defined as composite
+values — `"250ms ease"`, duration *and* easing together, designed to drop
+into a `transition:` shorthand cleanly. Five `animation:` declarations
+(`.gl-table-card`, `.gl-bar-row`, `.invalid-feedback`, `.gl-toast`,
+`.gl-toast.is-leaving`) additionally appended a literal `ease` (or `ease
+reverse`) keyword after the `var()`, producing e.g. `animation:
+gl-fade-in-up 250ms ease ease forwards` — two easing-function values in
+one animation shorthand, which is invalid CSS. Per standard CSS error
+handling, an invalid shorthand value is dropped in full, not partially
+applied, so the `animation` property silently never took effect on any of
+the five, leaving each element's separately-declared `opacity: 0` (where
+present) permanently in effect. A secondary, previously-undiscovered
+consequence of the same bug: `.gl-toast`'s dismiss handler in `main.js`
+waits for the `animationend` event to remove a toast from the DOM after
+adding `.is-leaving` — since that animation was also silently invalid,
+toasts would never actually have been removed by the close button or the
+4-second auto-dismiss timer once shown, a real functional regression
+nobody had reported yet.
+
+**Fix, two layers, both requested by the user:**
+1. Removed the redundant easing keyword from all five declarations —
+   this alone restores correct rendering, independent of JS.
+2. Implemented the requested fail-safe architecture project-wide, not
+   just for table cards: `document.documentElement.classList.add('js-ready')`
+   (renamed from the earlier `'js-enabled'`, same mechanism, now used more
+   broadly) is the literal first statement of `main.js`. Every
+   "hidden-then-revealed" CSS rule (`.gl-reveal`, `.gl-table-card`,
+   `.gl-bar-row`, `.invalid-feedback`, `.gl-hero-enter` and its two delay
+   modifiers) was restructured so the base selector is always visible and
+   only an `html.js-ready`-prefixed selector adds the hidden/animated
+   state. One specificity bug caught and fixed while doing this: the
+   `.gl-hero-enter-delay-1/2` modifier rules needed the same
+   `html.js-ready` prefix added, or the (now higher-specificity) base
+   `html.js-ready .gl-hero-enter` rule's implicit `animation-delay: 0s`
+   would have won the cascade and silently cancelled the stagger.
+   `docs/design-process.md` §9.8 has the full writeup and the reasoning
+   for why both layers were needed (fixing the CSS alone doesn't add
+   future defence; the `js-ready` gate alone wouldn't have fixed anything,
+   since this specific bug was never actually about JavaScript).
+
+**Verification:** `node --check` on `main.js` (valid), a CSS brace-balance
+script check (still balanced), and a direct `diff` between the local file
+and the file Apache actually serves (identical — ruled out a stale-cache
+false alarm that came up mid-debugging, see below). Live smoke test
+(script-based, not inline — see the feedback memory on this from the prior
+session) covering: register → login → search with results (confirmed 20
+`.gl-table-card` elements with correctly staggered `--gl-row-i` values,
+zero PHP errors) → search with zero results (confirmed the exact §7 empty-
+state wording plus the lotus motif icon still renders, zero PHP errors) →
+complete a booking end to end (zero PHP errors, correct redirect with
+`?highlight=`). **Two test-harness mistakes caught and corrected during
+this pass, not app bugs:** first, an overly broad grep in the verification
+script matched the *explanatory comment* documenting the old bug
+(literally quotes the broken pattern as an example) and reported a false
+"still broken" — resolved by diffing the actual served file against the
+local one directly instead of trusting a naive grep. Second, an early
+version of the smoke-test script POSTed login credentials to
+`customer/dashboard.php` instead of `auth/login.php`, so every downstream
+check failed for an unrelated reason (never actually authenticated) — caught
+by writing an isolated step-by-step debug script that printed headers and
+cookies at every stage, which immediately made the wrong URL obvious.
+
+**Not verified, same gap as Phase P7.6:** the Chrome extension still would
+not connect this session, so the fix is confirmed correct by CSS-grammar
+reasoning plus server-rendered-markup checks, but was never watched
+actually render in a browser. This remains open — see
+`docs/remaining-work.md` item 1.
+
+**Cleanup:** this session's smoke tests registered three more throwaway
+accounts (`debugauth<timestamp>`, `bugfixtest<timestamp>` ×2) and one test
+reservation (id 70, notes "CSS bugfix smoke test"). All confirmed
+unreferenced elsewhere (checked `actioned_by` as well as `user_id`) and
+deleted the same way as the Phase P7.6 cleanup. Post-cleanup state: 8
+users, 61 reservations — the reservation count is one higher than Phase
+P7.6's post-cleanup figure (60) not because of leftover test data, but
+because the project owner made a further real booking (id 69, dated
+2026-08-06) between sessions; confirmed by inspecting its `user_id` (9,
+"Duy hoàng" — an account already established as the owner's own, not
+AI-testing residue) before concluding it was legitimate rather than
+assuming so.
+
 ---
 
 ## AI usage record (interim — finalize in report §12)
@@ -316,6 +418,7 @@ totals after cleanup: 8 users, 60 reservations.
 | P5, P6, P7 | Claude Code (Claude Sonnet 5) | Feature implementation per the CLAUDE.md-documented roadmap | Authentication flow, core reservation workflow, admin CRUD/dashboard/reports, shared listing helpers, CSS/JS polish | Every phase's code was read back and reasoned about in-session before being called done; Phase P7 additionally driven with real `curl` requests against the live seeded database (login, CRUD, CSRF, validation, filter-preservation, CSV export) rather than trusting `php -l` alone — this is how the placeholder-duplication PDO bug was actually caught, not by inspection |
 | P7 (handover) | Claude Code (Claude Sonnet 5) | Test plan, security review, screenshot checklist, viva prep, remaining-work checklist, README, this log | All content in `docs/test-plan.md`, `docs/security-review.md`, `docs/screenshot-checklist.md`, `docs/viva-preparation.md`, `docs/remaining-work.md`, `README.md`, this file | Every claim in these documents is grounded in a specific file/line in the actual codebase (cited inline) rather than generic security-checklist boilerplate — cross-check any claim against the cited file if in doubt; the 43 test cases still need to be **actually executed** (they were written, not run, in this pass — see `docs/remaining-work.md` item 2) |
 | P7.6 (UI polish) | Claude Code (Claude Sonnet 5) | Full presentational UI modernisation pass (tokens, SVG icon system, toasts, gradients, motion, per-page polish) | `includes/icons.php` (new), `public/css/style.css`, `public/js/main.js`, `docs/design-process.md` §9, and every page file (`index.php`, both `auth/*`, all `customer/*`, all `admin/*`, `includes/header.php`/`footer.php`/`listing.php`) | `php -l` on all 18 touched files, `node --check` on the JS, a script-based CSS brace-balance check, and a full live `curl` smoke run repeating the P5/P6/P7 flows end to end with DB-level confirmation of every state change. **Not verified**: browser console errors, visual reduced-motion behaviour, and keyboard-only focus order — the Chrome extension would not connect this session; see this phase's log entry above and `docs/remaining-work.md` for the exact manual check-list still owed |
+| P7.7 (bugfix) | Claude Code (Claude Sonnet 5) | Diagnose and fix the invisible-table-cards regression reported by the user | `public/css/style.css` (5 corrected `animation` shorthands + fail-safe `html.js-ready` restructuring), `public/js/main.js` (`js-enabled`→`js-ready` rename/broadened use), `docs/design-process.md` §9.8, this log | Root cause identified by CSS-grammar reasoning (not guessed) before touching code; user's JS-error hypothesis was checked against every handler in `main.js` and found not to hold, and that was reported plainly rather than fabricating a matching fix. Verified via `node --check`, a CSS brace-balance script, a direct diff of local vs. server-served CSS, and a full live smoke test — during which two mistakes in the verification script itself (not the app) were caught and corrected, see this phase's log entry for detail. Browser-based visual/console confirmation still not possible this session (extension would not connect) |
 | P0–P4b | *(unconfirmed)* | — | — | Commits `c81ad32` through `a72fefc` do not carry a `Co-Authored-By: Claude Sonnet 5` git trailer, unlike every commit from P5 onward. This may mean those phases were done without AI assistance, or simply that the trailer wasn't added for those sessions — **confirm which, by hand, before finalizing the report's AI declaration table**, since this log can only report what's observable from git history, not what actually happened in an untracked session. |
 
 **Standing note for the final report:** regardless of which phases used AI
