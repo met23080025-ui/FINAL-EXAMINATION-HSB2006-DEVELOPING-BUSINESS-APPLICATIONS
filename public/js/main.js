@@ -27,6 +27,28 @@ document.addEventListener('DOMContentLoaded', function () {
     // docs/design-process.md muc "Polish pass").
     var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    // =========================================================================
+    // Navbar: them class "is-scrolled" khi cuon qua mot nguong nho - CSS
+    // (public/css/style.css, khoi "Navbar refinement") dung class nay de hien
+    // box-shadow (va, o trinh duyet ho tro, lop mo/trong suot qua
+    // backdrop-filter) tach navbar khoi noi dung ben duoi. Vien duoi 1px luc
+    // nghi la CSS thuan (khong can JS), nen du script nay khong chay duoc vi
+    // ly do gi, navbar van co ranh gioi ro rang voi trang - chi mat hieu ung
+    // bong-khi-cuon, khong mat toan bo diem phan cach.
+    // =========================================================================
+    (function () {
+        var navbar = document.querySelector('.navbar');
+        if (!navbar) {
+            return;
+        }
+        var SCROLL_THRESHOLD = 8;
+        function updateNavbarScrollState() {
+            navbar.classList.toggle('is-scrolled', window.scrollY > SCROLL_THRESHOLD);
+        }
+        updateNavbarScrollState();
+        window.addEventListener('scroll', updateNavbarScrollState, { passive: true });
+    })();
+
     // Vietnamese: vo hieu hoa nut submit NGAY khi bam (truoc khi cho phan hoi
     // mang), tranh khach bam hai lan lien tiep tao ra hai request gan nhu
     // trung nhau (vd bam "Confirm Reservation" hai lan). Day CHI la bien phap

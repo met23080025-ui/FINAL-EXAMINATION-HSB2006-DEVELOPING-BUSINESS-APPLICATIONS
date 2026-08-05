@@ -110,6 +110,10 @@
   --gl-fs-small: 0.875rem;
   --gl-lh-small: 1.4;
   --gl-ls-heading: -0.01em;
+  /* Letter-spacing duong nhe cho nhan dieu huong (navbar) - khac muc dich voi
+     --gl-ls-heading (am, danh cho tieu de Playfair) nen tach rieng token,
+     xem docs/design-process.md §9.10. */
+  --gl-ls-nav: 0.02em;
 
   /* Thang khoảng cách (spacing scale) - xem docs/design-process.md §5.4 */
   --gl-space-1: 0.25rem;
@@ -1059,4 +1063,173 @@ tr.gl-row-pending {
   border-bottom: 1px solid var(--gl-accent-soft);
   font-family: var(--gl-font-heading);
   font-weight: 600;
+}
+
+/*
+ * ============================================================================
+ * Navbar refinement (2026-08-05) - thuong hieu (icon + wordmark), trang thai
+ * lien ket (hover/active co gach chan hoat hinh), CTA cho khach, vien/bong
+ * khi cuon trang. Van xay tren cac token --gl-* san co - khong them mau moi
+ * ngoai bang mau §5.1. Rationale day du (bao gom bang kiem tra tuong phan):
+ * docs/design-process.md §9.10.
+ * ============================================================================
+ */
+
+.navbar {
+  /*
+   * Ghi de qua BIEN CSS RIENG cua chinh component navbar Bootstrap 5.3 -
+   * day la "diem mo rong" chinh thuc ma Bootstrap thiet ke san cho tuy bien,
+   * nen sach hon nhieu so voi dung !important hay danh dac ta cao hon.
+   *
+   * QUAN TRONG: mau mac dinh cua navbar-dark (rgba(255,255,255,.55)) CHI dat
+   * 3.58:1 tren nen --gl-primary (#0b5d3b) cua du an nay - KHONG dat nguong
+   * AA 4.5:1 cho van ban (mau .55 do la Bootstrap tinh cho nen navbar mac
+   * dinh cua ho, khac voi mau xanh la rieng cua du an). Vi vay o trang thai
+   * nghi phai nang len 0.85 (6.25:1, dat AA) thay vi giu nguyen gia tri goc
+   * cua Bootstrap - day KHONG phai lua chon tham my, ma la sua mot loi tuong
+   * phan co san truoc ca dot chinh sua nay. Hover/active dua ve trang tuyet
+   * doi (7.95:1) de tao do tuong phan ro giua 2 trang thai.
+   */
+  --bs-navbar-color: rgba(255, 255, 255, 0.85);
+  --bs-navbar-hover-color: #ffffff;
+  --bs-navbar-active-color: #ffffff;
+  --bs-navbar-brand-color: #ffffff;
+  --bs-navbar-brand-hover-color: #ffffff;
+
+  /* Vien duoi 1px mau --gl-primary-dark (sac do hon cua --gl-primary) luc
+     nghi, de navbar khong bi "dan de" len noi dung ben duoi khi chua cuon. */
+  border-bottom: 1px solid var(--gl-primary-dark);
+  transition: box-shadow var(--gl-t-base), background-color var(--gl-t-base);
+}
+
+/* Bong khi cuon qua nguong nho - public/js/main.js them/bo class nay theo
+   window.scrollY. */
+.navbar.is-scrolled {
+  box-shadow: var(--gl-shadow-2);
+}
+
+/* Lop mo/trong suot CHI ap dung o trinh duyet thuc su ho tro backdrop-filter
+   (kiem tra qua @supports) - noi khong ho tro se tu dong giu nguyen nen dac
+   --gl-primary tu quy tac .navbar/.bg-gl-primary o tren, KHONG bao gio roi
+   vao trang thai nen trong/thieu mau. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .navbar.is-scrolled {
+    background-color: rgba(11, 93, 59, 0.92) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
+/* ---- Thuong hieu (brand): icon hoa sen + wordmark Playfair ---- */
+
+.gl-navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gl-space-2);
+}
+
+.gl-navbar-brand-icon {
+  width: 1.75rem; /* ~28px o co chu goc 16px */
+  height: auto;
+  color: var(--gl-accent);
+  flex-shrink: 0;
+}
+
+.gl-navbar-brand-word {
+  font-family: var(--gl-font-heading);
+  font-size: 1.375rem; /* lon hon 1.25rem mac dinh cua .navbar-brand */
+  font-weight: 700;
+  letter-spacing: var(--gl-ls-heading);
+}
+
+/* ---- Nhan dieu huong: dem thoai mai, do dam/khoang cach chu, gach chan hoat hinh ---- */
+
+/*
+ * Dac ta ".navbar-nav .nav-link.gl-nav-link" (3 lop) de CHAC CHAN thang duoc
+ * quy tac dem/mau goc cua Bootstrap ".navbar-nav .nav-link" (2 lop) - khong
+ * can !important. Day la ly do dung ca hai class "nav-link gl-nav-link" tren
+ * cung mot the <a> thay vi chi mot class rieng.
+ */
+.navbar-nav .nav-link.gl-nav-link {
+  position: relative;
+  padding-top: var(--gl-space-2);
+  padding-bottom: var(--gl-space-2);
+  padding-left: var(--gl-space-3);
+  padding-right: var(--gl-space-3);
+  /*
+   * 600 (SemiBold) thay vi 500 - Be Vietnam Pro tu luu tru (Phase "Typography
+   * upgrade") CHI tai 3 do dam 400/600/700 (dung luong trang, xem
+   * docs/design-process.md §9.9). Yeu cau font-weight:500 khi khong co face
+   * nao that su o do dam do se bi thuat toan chon do day cua CSS tu dong lui
+   * ve 400 (face gan nhat trong khoang [1,500] khi khong tim thay [500,500])
+   * - tuc la KHONG TAO RA khac biet nao ca, chi la mot khai bao vo tac dung.
+   * Dung 600 (that su duoc tai) de tao do dam ro rang, that su nhin thay duoc.
+   */
+  font-weight: 600;
+  letter-spacing: var(--gl-ls-nav);
+}
+
+/* Gach chan hoat hinh - pseudo-element dinh vi tuyet doi (position:absolute)
+   nen KHONG anh huong layout (khong lam noi dung xung quanh xe dich) du o
+   trang thai nao. transform-origin:left + scaleX de "chay vao" tu trai sang,
+   khong phai width (width se anh huong layout, scaleX thi khong). */
+.gl-nav-link::after {
+  content: '';
+  position: absolute;
+  left: var(--gl-space-3);
+  right: var(--gl-space-3);
+  bottom: 0.3rem;
+  height: 2px;
+  /*
+   * Mau --gl-accent tren nen --gl-primary dat 3.28:1 - vua qua nguong 3:1 ma
+   * WCAG 1.4.11 yeu cau cho THANH PHAN KHONG PHAI CHU (non-text UI component,
+   * gach chan trang trai nay thuoc nhom do, khac voi van ban can 4.5:1) - xem
+   * bang tinh day du trong docs/development-log.md. Dat, khong can doi mau.
+   */
+  background-color: var(--gl-accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--gl-t-fast);
+}
+
+.gl-nav-link:hover::after,
+.gl-nav-link.active::after {
+  transform: scaleX(1);
+}
+
+/* Ten trong nhan "Logout (Ten)" hien thu yeu (nhe hon, mo hon) de tach biet
+   voi tu "Logout" chinh, tranh doc thanh mot chuoi dai lien tuc. Dung dung
+   opacity 0.75 (KHONG thap hon) - 0.75 tren --gl-primary dat 5.26:1 (AA),
+   0.65 chi con 4.35:1 (fail) - xem bang tinh trong docs/development-log.md. */
+.gl-nav-logout-name {
+  font-weight: 400;
+  opacity: 0.75;
+  margin-left: 0.2em;
+}
+
+/* ---- CTA cho khach chua dang nhap (nut Register) ---- */
+
+.gl-btn-nav-cta {
+  background-color: var(--gl-accent);
+  border-color: var(--gl-accent);
+  /*
+   * Mau chu --gl-primary-dark, KHONG phai trang: trang tren --gl-accent chi
+   * dat 2.42:1 (fail ca nguong AA chu lon 3:1) - --gl-primary-dark dat 5.16:1
+   * (dat AA 4.5:1 thoai mai). Da thu ca --gl-text (6.14:1) va --gl-primary
+   * (3.28:1, fail) - chon --gl-primary-dark vi vua dat AA vua giu tinh than
+   * thuong hieu (xanh dam tren vang, dung mau da dung cho trang thai hover
+   * cua .btn-gl-primary). Bang tinh day du: docs/development-log.md.
+   */
+  color: var(--gl-primary-dark);
+}
+
+.gl-btn-nav-cta:hover,
+.gl-btn-nav-cta:focus {
+  background-color: var(--gl-accent);
+  border-color: var(--gl-accent);
+  color: var(--gl-primary-dark);
+  /* filter: brightness() thay vi mot ma mau moi - lam sang nhe ca nen lan
+     chu cung luc, ty le tuong phan giua chung khong doi dang ke. */
+  filter: brightness(1.08);
+  transform: translateY(-1px);
 }

@@ -750,3 +750,79 @@ dropped" note — `--gl-fs-h1/h2/h3` reduced modestly and
 wider than Georgia at heading sizes and reduce the risk of short headings
 wrapping awkwardly in tight containers (modal titles, card headers, tile
 labels) that fit comfortably on one line under the old font.
+
+### 9.10 Navbar refinement — brand mark, link states, guest CTA
+
+**Decision (2026-08-05):** the navbar went from bare brand text + three
+plain links to a proper brand lockup (lotus icon + Playfair wordmark),
+stateful nav links (animated underline on hover, persistent underline on
+the active page), a differentiated primary action for signed-out visitors
+(Register as a small filled button, Login staying a text link), and a
+resting bottom border plus a scroll-triggered shadow so the navbar reads
+as a distinct surface rather than a flat-pasted strip. All of it built
+from existing `--gl-*` tokens — no new colours introduced.
+
+**A pre-existing contrast bug this surfaced (not a design choice):**
+checking the navbar's actual rendered contrast rather than assuming
+Bootstrap's defaults were fine turned up a real problem — `navbar-dark`'s
+default link colour (`rgba(255,255,255,.55)`) was **never actually
+verified against this project's own `--gl-primary` green** at any earlier
+phase. Computed directly: white at 55% opacity over `#0b5d3b` resolves to
+an effective `#91B6A7`, which is **3.58:1** against that background —
+below the 4.5:1 AA minimum for text. This means every nav link at rest,
+since the very first phase the navbar existed, technically failed AA. Fixed
+by raising the rest-state opacity to 85% (**6.25:1**), well clear of the
+threshold, using Bootstrap 5.3's own `--bs-navbar-color` custom property
+rather than fighting the framework's specificity — the idiomatic override
+point for exactly this kind of change.
+
+**Full contrast table for every colour introduced or changed this pass**
+(same WCAG 2.1 relative-luminance method as §5.2, computed not assumed):
+
+| Foreground / background | Ratio | Requirement | Result |
+|---|---|---|---|
+| Nav link rest, `rgba(255,255,255,.85)` on `--gl-primary` | **6.25:1** | 4.5:1 (text) | Pass |
+| Nav link hover/active, `#fff` on `--gl-primary` | **7.95:1** | 4.5:1 (text) | Pass |
+| Logout name (secondary), `rgba(255,255,255,.75)` on `--gl-primary` | **5.26:1** | 4.5:1 (text) | Pass |
+| *(rejected: same at .65 opacity)* | *4.35:1* | *4.5:1* | *Fail — this is why .75 was chosen, not a rounder-looking .7 or .65* |
+| Active-link underline, `--gl-accent` on `--gl-primary` | **3.28:1** | 3:1 (non-text UI, WCAG 1.4.11) | Pass |
+| CTA button text, `--gl-primary-dark` on `--gl-accent` | **5.16:1** | 4.5:1 (text) | Pass |
+| *(rejected: white text on `--gl-accent`)* | *2.42:1* | *4.5:1* | *Fail — confirms §5.2's existing restriction on white/light text over the gold tone* |
+| *(rejected: `--gl-primary` text on `--gl-accent`)* | *3.28:1* | *4.5:1* | *Fail at text size, though it would pass the 3:1 non-text bar* |
+
+**Font-weight substitution:** the brief asked for "a consistent 500
+weight" on nav links. Be Vietnam Pro is self-hosted at only 400/600/700
+(§9.9's deliberate scope-down to the three weights actually used). Per the
+CSS Fonts font-matching algorithm, requesting `font-weight: 500` when only
+400 and 700 exist for a family resolves to **400** (the algorithm searches
+downward from the target before searching upward, for targets in the
+400–500 band) — so a literal `500` here would have been a silent no-op,
+not a visible medium weight. Used **600** instead, which is actually
+loaded and produces a real, visible distinction from body text.
+
+**Active-page detection:** compares the full current script path
+(`$_SERVER['SCRIPT_NAME']`) against each link's target, not just the
+filename — `admin/dashboard.php` and `customer/dashboard.php` share a
+basename, so a `basename()`-only comparison would have been a latent bug
+even though the two link lists never render together in practice. Adds
+both a persistent underline (`.active` class) and `aria-current="page"`
+for screen readers, not just the visual treatment.
+
+**Scroll shadow — built, not pre-existing:** worth noting for the record
+that this was requested as "the navbar already gains a shadow on scroll,"
+but no such behaviour existed anywhere in the codebase before this pass
+(verified by search, not assumed) — it was built fresh here (`is-scrolled`
+class toggled by `public/js/main.js` past an 8px scroll threshold), not
+extended from prior work.
+
+**Reduced motion:** the underline's `transform: scaleX()` uses a plain
+CSS `transition`, already covered by the blanket
+`prefers-reduced-motion: reduce` rule from §9.2 (collapses all transition
+durations to ~0) — no separate handling needed, consistent with every
+other transition-based effect in the system.
+
+**Backdrop-filter fallback:** the translucent-on-scroll background is
+scoped entirely inside `@supports (backdrop-filter: blur(1px))` — browsers
+without support simply never see that rule and keep the plain solid
+`--gl-primary` background with just the scroll shadow, never a
+transparent or unstyled state.
