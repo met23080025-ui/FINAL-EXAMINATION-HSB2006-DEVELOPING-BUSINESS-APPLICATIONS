@@ -175,17 +175,137 @@ export headers/filename/escaping — all confirmed working against the real
 database before the phase was called complete.
 
 ## Phase P7.5 — Handover documentation
-**Not yet committed as of writing this entry — see `docs/remaining-work.md`.**
+**Commit:** `6ea5d90` (2026-08-05) — *docs(P8 handover): test plan, security review, viva prep, packaging checklists*
 
-With the AI-assisted session's Claude Pro access ending, this pass wrote
-the documents needed to finish Phases P8/P9 without further AI help:
-`docs/test-plan.md` (43 test cases, replacing the Phase P0 placeholder),
-`docs/security-review.md` (every implemented control referenced to its
-file), `docs/screenshot-checklist.md`, `docs/viva-preparation.md` (20
-Q&A), `docs/remaining-work.md` (this checklist), a finalized `README.md`,
-and this log. `docs/report-content.md` §9–12 were also filled in as far as
-possible without information only a human can supply (team names, actual
-screenshots, actual test results, the Project board link).
+With the AI-assisted session's Claude Pro access believed to be ending,
+this pass wrote the documents needed to finish Phases P8/P9 without
+further AI help: `docs/test-plan.md` (43 test cases, replacing the Phase
+P0 placeholder), `docs/security-review.md` (every implemented control
+referenced to its file), `docs/screenshot-checklist.md`,
+`docs/viva-preparation.md` (20 Q&A), `docs/remaining-work.md` (this
+checklist), a finalized `README.md`, and this log. `docs/report-content.md`
+§9–12 were also filled in as far as possible without information only a
+human can supply (team names, actual screenshots, actual test results,
+the Project board link). As it turned out, the session continued past
+this point (Phase P7.6 below) — the handover doc set still stands as
+written and remains the right reference for whoever finishes P8/P9,
+AI-assisted or not.
+
+## Phase P7.6 — UI modernisation pass ("Polish pass")
+**Commit:** `03c503b` (2026-08-05) — *style: modern UI polish — gradients, motion, SVG identity, refined components*
+
+Purely presentational upgrade across every page — no business logic,
+routes, validation rules, or the locked status-badge colour mapping
+changed. Built in this order:
+
+1. **Token foundation** (`public/css/style.css` `:root`): shadow scale
+   (`--gl-shadow-1..3`), radius scale, transition tokens, three gradient
+   recipes built only from `--gl-primary`/`--gl-accent`, a blanket
+   `@media (prefers-reduced-motion: reduce)` rule, and a dual-layer
+   `:focus-visible` ring (solid `--gl-primary` outline + `--gl-accent`
+   glow — a plain solid accent outline was rejected because it measures
+   2.28:1 against `--gl-bg`, failing WCAG 1.4.11's 3:1 non-text-contrast
+   minimum, the same restriction §5.2 already placed on accent-as-text).
+2. **`includes/icons.php` (new file)** — a hand-drawn inline SVG library:
+   a five-petal lotus motif (one petal `<path>` repeated via
+   `transform="rotate"`), four area glyphs, a selection-check glyph, and
+   five admin/report tile icons — all stroke-only, `currentColor`, so
+   they inherit colour from context with zero extra colour declarations.
+   Chosen specifically to give the project a signature, licence-free
+   identity without adding any icon library or stock imagery (both ruled
+   out by the brief).
+3. **Toast flash messages** — `includes/header.php` now renders flashes
+   as a top-right toast region instead of static top-of-page alerts;
+   `public/js/main.js` auto-dismisses success/info/warning after 4s with
+   a shrinking progress line, while error (`danger`) toasts persist until
+   manually closed. The underlying session-flash mechanism
+   (`includes/helpers.php`) is completely unchanged — presentation only.
+4. **Every page**: gradient hero + area cards + scroll-reveal on
+   `index.php`; split-layout gradient panel on `auth/login.php` and
+   `auth/register.php`; staggered fade-in table-selection cards with a
+   check-glyph selected state on `customer/book.php`; pill badges, row
+   hover, and a one-time 2s highlight on the row just created/cancelled
+   (via a `?highlight=<id>` query param read by JS after the PRG
+   redirect) on `customer/my-reservations.php`; an accent-bordered
+   gradient "next reservation" hero card on `customer/dashboard.php`;
+   count-up tiles with SVG icons on `admin/dashboard.php`; pending-row
+   accent borders, a sticky table header, and SVG sort-direction chevrons
+   (replacing the previous Unicode ▲/▼) on `admin/bookings.php`;
+   scale+fade modal entrances (pure CSS override of Bootstrap's own
+   show/hide lifecycle, no JS change) on the `admin/tables.php` and
+   `admin/timeslots.php` CRUD modals; bars that grow from 0 on load on
+   `admin/reports.php`.
+5. **`docs/design-process.md` §9 ("Polish pass")** — every new token, the
+   reduced-motion decision and its accessibility rationale, the
+   dual-layer focus-ring rationale, the lotus-motif decision, a
+   component-by-component reduced-motion behaviour table, and a fresh
+   WCAG contrast re-verification for every new text-bearing surface
+   (hero gradient's worst-case stop: white on `#0e7048` = **6.12:1**;
+   new `.text-muted` colour `#5b6960`: **5.44:1** on `--gl-bg`, **5.78:1**
+   on white — both computed via the same relative-luminance method as
+   §5.2, not asserted).
+
+**Bug found and fixed, caught by live testing rather than lint:**
+`index.php` called the new icon functions (`svg_icon_chair()` etc.) while
+building its `$areas` array *before* `includes/header.php` was required —
+and `icons.php` is only loaded from inside `header.php`. `php -l` passed
+cleanly on `index.php` regardless, because `-l` only checks PHP syntax; it
+does not execute the file, so a call to an undefined function is
+completely invisible to it. The bug only surfaced when the homepage was
+actually requested over HTTP (`curl http://localhost/golden-lotus/index.php`)
+during the verification pass, which returned a real
+`Fatal error: Uncaught Error: Call to undefined function svg_icon_chair()`.
+Fixed with a direct `require_once __DIR__ . '/includes/icons.php';` near
+the top of `index.php`, independent of `header.php`'s later include. Same
+lesson as the Phase P7 PDO placeholder bug: **`php -l` only proves syntax
+validity, never runtime correctness** — every phase in this project that
+found a real bug found it by executing the code against the live server,
+not by lint or code review alone. Re-verified after the fix: `curl` to
+`/index.php` returned zero PHP errors.
+
+**Verification performed this session:** `php -l` on all 18 touched
+files (all clean, including after the fix above); `node --check` on
+`public/js/main.js` (valid syntax); a script-based (not ad hoc inline)
+CSS brace-balance check (130 open / 130 close); and a full live
+`curl`-driven smoke run repeating the P5/P6/P7 flows end to end —
+register → login → search availability → book → admin approve → customer
+cancel → admin table CRUD create/delete → CSV export — all against the
+real seeded database, all zero PHP errors, every status transition
+confirmed correct directly in MySQL (not just trusted from the HTTP
+response).
+
+**Verification NOT performed — genuine gap, not silently skipped:** the
+Chrome browser extension would not connect in this session
+(`tabs_context_mcp` returned "Browser extension is not connected" on two
+separate attempts), so none of the following were actually checked and
+still need a human pass before the demo: **(1)** browser DevTools console
+for JavaScript errors on any page, **(2)** visually confirming
+`prefers-reduced-motion: reduce` genuinely stills every animation listed
+in `docs/design-process.md` §9.5's table (OS-level: Windows Settings →
+Accessibility → Visual effects → "Animation effects" off, or emulate via
+Chrome DevTools' Rendering tab → "Emulate CSS media feature
+prefers-reduced-motion"), and **(3)** tabbing through every page
+keyboard-only to confirm the dual-layer focus ring (§9.3) is visible on
+every interactive element in the actual tab order, including inside the
+CRUD modals and the toast close buttons. See
+`docs/remaining-work.md`'s new item for the exact check-list.
+
+**Post-session cleanup:** the live smoke run in this phase and the
+previous P7 session both registered throwaway test accounts and created
+test reservations/tables against the real project database (not a
+disposable test DB) to get genuine HTTP-level proof rather than trusting
+code review alone. All of that residue was identified and removed in a
+follow-up cleanup pass the same day: reservation id 68 (a cancelled
+`UI smoke test` booking) and user ids 10–11
+(`uitest<timestamp>@goldenlotus.test`, both literally named "UI Test
+User" so they were unambiguous to find) were deleted after confirming via
+SQL that neither was referenced anywhere else (checked `actioned_by` on
+every reservation, not just `user_id`, before deleting). Real accounts the
+project owner created manually between sessions (user id 2, whose email
+had been changed to a real personal address, and user id 9, "Duy hoàng")
+were left untouched — they were never part of the AI-driven testing and
+were identified as such before any deletion, not assumed safe. Database
+totals after cleanup: 8 users, 60 reservations.
 
 ---
 
@@ -194,7 +314,8 @@ screenshots, actual test results, the Project board link).
 | Phase(s) | Tool | Purpose | Parts assisted | How verified |
 |---|---|---|---|---|
 | P5, P6, P7 | Claude Code (Claude Sonnet 5) | Feature implementation per the CLAUDE.md-documented roadmap | Authentication flow, core reservation workflow, admin CRUD/dashboard/reports, shared listing helpers, CSS/JS polish | Every phase's code was read back and reasoned about in-session before being called done; Phase P7 additionally driven with real `curl` requests against the live seeded database (login, CRUD, CSRF, validation, filter-preservation, CSV export) rather than trusting `php -l` alone — this is how the placeholder-duplication PDO bug was actually caught, not by inspection |
-| P7 (handover) | Claude Code (Claude Sonnet 5) | Test plan, security review, screenshot checklist, viva prep, remaining-work checklist, README, this log | All content in `docs/test-plan.md`, `docs/security-review.md`, `docs/screenshot-checklist.md`, `docs/viva-preparation.md`, `docs/remaining-work.md`, `README.md`, this file | Every claim in these documents is grounded in a specific file/line in the actual codebase (cited inline) rather than generic security-checklist boilerplate — cross-check any claim against the cited file if in doubt; the 43 test cases still need to be **actually executed** (they were written, not run, in this pass — see `docs/remaining-work.md` item 1) |
+| P7 (handover) | Claude Code (Claude Sonnet 5) | Test plan, security review, screenshot checklist, viva prep, remaining-work checklist, README, this log | All content in `docs/test-plan.md`, `docs/security-review.md`, `docs/screenshot-checklist.md`, `docs/viva-preparation.md`, `docs/remaining-work.md`, `README.md`, this file | Every claim in these documents is grounded in a specific file/line in the actual codebase (cited inline) rather than generic security-checklist boilerplate — cross-check any claim against the cited file if in doubt; the 43 test cases still need to be **actually executed** (they were written, not run, in this pass — see `docs/remaining-work.md` item 2) |
+| P7.6 (UI polish) | Claude Code (Claude Sonnet 5) | Full presentational UI modernisation pass (tokens, SVG icon system, toasts, gradients, motion, per-page polish) | `includes/icons.php` (new), `public/css/style.css`, `public/js/main.js`, `docs/design-process.md` §9, and every page file (`index.php`, both `auth/*`, all `customer/*`, all `admin/*`, `includes/header.php`/`footer.php`/`listing.php`) | `php -l` on all 18 touched files, `node --check` on the JS, a script-based CSS brace-balance check, and a full live `curl` smoke run repeating the P5/P6/P7 flows end to end with DB-level confirmation of every state change. **Not verified**: browser console errors, visual reduced-motion behaviour, and keyboard-only focus order — the Chrome extension would not connect this session; see this phase's log entry above and `docs/remaining-work.md` for the exact manual check-list still owed |
 | P0–P4b | *(unconfirmed)* | — | — | Commits `c81ad32` through `a72fefc` do not carry a `Co-Authored-By: Claude Sonnet 5` git trailer, unlike every commit from P5 onward. This may mean those phases were done without AI assistance, or simply that the trailer wasn't added for those sessions — **confirm which, by hand, before finalizing the report's AI declaration table**, since this log can only report what's observable from git history, not what actually happened in an untracked session. |
 
 **Standing note for the final report:** regardless of which phases used AI
