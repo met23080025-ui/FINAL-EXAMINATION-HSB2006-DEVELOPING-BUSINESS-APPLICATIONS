@@ -1019,7 +1019,22 @@ tr.gl-row-pending {
   font-variant-numeric: tabular-nums;
 }
 
-/* ---- The "dat cho sap toi" tren dashboard khach hang ---- */
+/*
+ * ============================================================================
+ * The "dat cho sap toi" (next reservation) tren dashboard khach hang - lam
+ * lai 2026-08-05 de giai quyet 3 van de: truong don don ben trai de lai
+ * khoang trong ben phai, nhan qua sat gia tri, ngay hien thi dang du lieu
+ * tho ("2026-08-06") thay vi cau nguoi doc duoc. Chi la trinh bay - khong
+ * doi truy van/logic; xem docs/design-process.md §9.11 cho rationale day du
+ * (bao gom bang kiem tra tuong phan cho mau nhan mo).
+ *
+ * QUY UOC KHOANG CACH (giai quyet mau thuan so lieu giua 2 yeu cau): khoang
+ * cach TRONG mot truong (nhan -> gia tri cua CHINH no) dung --gl-space-1
+ * (rat sat, doc nhu MOT khoi); khoang cach GIUA cac truong/hang (cot voi
+ * cot, hang voi hang khi xep chong o man hinh hep) dung --gl-space-4/5 -
+ * hai muc do khac nhau, khong mau thuan nhau du con so nghe giong.
+ * ============================================================================
+ */
 
 .gl-next-reservation-card {
   position: relative;
@@ -1031,11 +1046,132 @@ tr.gl-row-pending {
   box-shadow: var(--gl-shadow-2);
 }
 
-.gl-next-reservation-card .gl-next-value {
+.gl-next-reservation-card .card-body {
+  padding: var(--gl-space-5);
+}
+
+/* Tieu de nho lai, viet hoa, mo mau - "hien" cua the la CHINH DAT CHO, khong
+   phai dong tieu de - nen ghi de font/mau/letter-spacing tieu de mac dinh
+   (h1..h6 dung Playfair + --gl-primary) bang mot lop tram lang hon.
+   Mau #5b6960 tren nen trang cua the dat 5.78:1 (AA) - xem docs/development-log.md. */
+.gl-next-reservation-title {
+  font-family: var(--gl-font-body);
+  font-size: var(--gl-fs-small);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #5b6960;
+  margin-bottom: var(--gl-space-4);
+}
+
+/* Khung ngoai: luoi 4 truong + dong "con bao lau" ben phai, cung hang, chia
+   deu chieu rong the (giai quyet "nua ben phai bi trong"). */
+.gl-next-reservation-body {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--gl-space-4);
+}
+
+.gl-next-reservation-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  column-gap: var(--gl-space-5);
+  row-gap: var(--gl-space-4);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.gl-next-field {
+  min-width: 0;
+}
+
+.gl-next-label {
+  display: flex;
+  align-items: center;
+  gap: var(--gl-space-1);
+  margin-bottom: var(--gl-space-1);
+  font-size: var(--gl-fs-small);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #5b6960;
+}
+
+.gl-next-label .gl-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--gl-accent);
+  flex-shrink: 0;
+}
+
+/* Ngay + khung gio - chu lon nhat trong the, dung font tieu de Playfair +
+   --gl-primary, doc duoc nhu mot cau ("Thursday, 6 August 2026") thay vi
+   chuoi ngay ISO tho. Khung gio nam duoi, nho hon mot chut nhung van noi
+   bat - hai dong doc nhu MOT khoi thong tin (--gl-space-1 giua chung). */
+.gl-next-date {
   font-family: var(--gl-font-heading);
   font-size: var(--gl-fs-h3);
   font-weight: 700;
   color: var(--gl-primary);
+  line-height: 1.2;
+}
+
+.gl-next-slot {
+  font-family: var(--gl-font-heading);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--gl-primary);
+  margin-top: var(--gl-space-1);
+}
+
+.gl-next-field-value {
+  font-size: var(--gl-fs-body);
+  font-weight: 600;
+  color: var(--gl-text);
+}
+
+/* Huy hieu trang thai trong the nay rong rai hon mot chut so voi mac dinh
+   toan cuc (.badge, xem quy tac chung o duoi file) - VAN GIU nguyen bang mau
+   trang thai da khoa (§5.1), chi doi khoang dem, pham vi CHI trong the nay. */
+.gl-next-reservation-card .badge {
+  padding: 0.5em 1em;
+}
+
+/* Dong "con bao lau" - tinh san o PHP (hien thi thuan tuy, khong phai
+   truong/du lieu moi), lam diem nhan nhe cho khoang trong ben phai the. */
+.gl-next-countdown {
+  flex-shrink: 0;
+  font-size: var(--gl-fs-small);
+  color: #5b6960;
+  white-space: nowrap;
+}
+
+@media (max-width: 767.98px) {
+  .gl-next-reservation-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .gl-next-reservation-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Ap dung LAI kieu chu nhan/gia tri cua the tren cho bang "Recent history"
+   ngay ben duoi (yeu cau muc 4 - giu trang mach lac, dung mau da dung). */
+.gl-history-table th {
+  font-size: var(--gl-fs-small);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #5b6960;
+}
+
+.gl-history-table td {
+  font-weight: 600;
 }
 
 /* ---- Footer: hoa tiet hoa sen nho, kin dao ---- */

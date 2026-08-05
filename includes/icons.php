@@ -141,6 +141,19 @@ function svg_icon_flame(): string
 }
 
 /**
+ * Icon ban an don gian (mat ban + 2 chan) - dung canh nhan "Table" o cac the
+ * tom tat dat cho (vd the "next reservation" tren customer/dashboard.php).
+ */
+function svg_icon_table(): string
+{
+    return '<svg class="gl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'
+        . '<path d="M3.5 8.5l2.5-5h12l2.5 5"/>'
+        . '<path d="M3.5 8.5h17"/>'
+        . '<path d="M6 8.5v11.5M18 8.5v11.5"/>'
+        . '</svg>';
+}
+
+/**
  * Icon nhom nguoi - tile/o "Average Party Size" tren reports.php.
  */
 function svg_icon_people(): string

@@ -34,6 +34,41 @@ $upcoming_stmt = $pdo->prepare("
 $upcoming_stmt->execute([':user_id' => $user_id]);
 $next_reservation = $upcoming_stmt->fetch();
 
+// Vietnamese: chuan bi cac chuoi hien thi "de doc" cho con nguoi (Phase
+// "Next-reservation card refinement") - chi la trinh bay, khong doi du lieu
+// hay logic nghiep vu. Tinh san o day (thay vi trong HTML ben duoi) de phan
+// markup phia duoi gon, de doc.
+$next_human_date  = null;
+$next_human_slot  = null;
+$next_countdown   = null;
+if ($next_reservation !== false) {
+    $res_date_obj    = new DateTimeImmutable($next_reservation['reservation_date']);
+    $next_human_date = $res_date_obj->format('l, j F Y');
+    // Vietnamese: dau gach ngang "–" (en dash) co khoang trang hai ben la quy
+    // uoc TYPOGRAPHY rieng cho khung gio hien thi lon/noi bat (khac voi quy
+    // uoc "gach ngang thuong cho khoang thoi gian" ap dung o cac bang du lieu
+    // dac, vd "11:00-12:30" trong dropdown chon gio) - day la mot ky tu
+    // Unicode that (U+2013), khong phai HTML entity, nen di qua e() binh
+    // thuong van an toan (e() chi thoat 5 ky tu dac biet HTML, khong dong
+    // den cac ky tu Unicode khac).
+    $next_human_slot = substr($next_reservation['start_time'], 0, 5) . ' – ' . substr($next_reservation['end_time'], 0, 5);
+
+    // Vietnamese: "con bao lau" tinh theo NGAY LICH (khong phai gio chinh
+    // xac) - "Tomorrow" tu nhien hon "In 1 day" voi nguoi doc, "Today" ro
+    // rang hon "In 0 days". Reservation da duoc loc la CON O TUONG LAI trong
+    // cau SQL o tren, nen $days_away luon >= 0 - van giu dieu kien <= 0 de
+    // an toan (phong khi logic loc thay doi trong tuong lai).
+    $today_obj  = new DateTimeImmutable('today');
+    $days_away  = (int) $today_obj->diff($res_date_obj)->format('%r%a');
+    if ($days_away <= 0) {
+        $next_countdown = 'Today';
+    } elseif ($days_away === 1) {
+        $next_countdown = 'Tomorrow';
+    } else {
+        $next_countdown = 'In ' . $days_away . ' days';
+    }
+}
+
 $history_stmt = $pdo->prepare('
     SELECT r.id, r.reservation_date, r.party_size, r.status,
            t.table_code, t.area, ts.start_time, ts.end_time
@@ -66,33 +101,34 @@ require __DIR__ . '/../includes/header.php';
 
 <div class="card gl-next-reservation-card mb-4">
     <div class="card-body">
-        <h2 class="h5 mb-3">Your next reservation</h2>
+        <h2 class="gl-next-reservation-title">Your next reservation</h2>
         <?php if ($next_reservation === false): ?>
             <?php // Vietnamese: khong co san cau chu chinh xac trong §7 cho truong hop nay - dung cung tinh than voi cau da chuan hoa (thong bao + hanh dong ke tiep ro rang). ?>
             <p class="mb-2 text-muted">You have no upcoming reservations.</p>
             <a href="<?= BASE_URL ?>/customer/book.php" class="btn btn-outline-secondary btn-sm">Book a Table to get started</a>
         <?php else: ?>
-            <div class="d-flex flex-wrap align-items-center gap-4">
-                <div>
-                    <div class="text-muted small">Date &amp; time</div>
-                    <div class="gl-next-value">
-                        <?= e($next_reservation['reservation_date']) ?>
-                        &middot;
-                        <?= e(substr($next_reservation['start_time'], 0, 5) . '-' . substr($next_reservation['end_time'], 0, 5)) ?>
+            <div class="gl-next-reservation-body">
+                <div class="gl-next-reservation-grid">
+                    <div class="gl-next-field gl-next-field-datetime">
+                        <div class="gl-next-label"><?= svg_icon_calendar() ?><span>Date &amp; time</span></div>
+                        <div class="gl-next-date"><?= e($next_human_date) ?></div>
+                        <div class="gl-next-slot"><?= e($next_human_slot) ?></div>
+                    </div>
+                    <div class="gl-next-field">
+                        <div class="gl-next-label"><?= svg_icon_table() ?><span>Table</span></div>
+                        <div class="gl-next-field-value"><?= e($next_reservation['table_code']) ?> &middot; <?= e(format_area_label($next_reservation['area'])) ?></div>
+                    </div>
+                    <div class="gl-next-field">
+                        <div class="gl-next-label"><?= svg_icon_people() ?><span>Guests</span></div>
+                        <div class="gl-next-field-value"><?= e((string) $next_reservation['party_size']) ?></div>
+                    </div>
+                    <div class="gl-next-field">
+                        <div class="gl-next-label"><span>Status</span></div>
+                        <div class="gl-next-field-value"><?= status_badge_html($next_reservation['status']) ?></div>
                     </div>
                 </div>
-                <div>
-                    <div class="text-muted small">Table</div>
-                    <div class="fs-5"><?= e($next_reservation['table_code']) ?> &middot; <?= e(format_area_label($next_reservation['area'])) ?></div>
-                </div>
-                <div>
-                    <div class="text-muted small">Guests</div>
-                    <div class="fs-5"><?= e((string) $next_reservation['party_size']) ?></div>
-                </div>
-                <div>
-                    <div class="text-muted small">Status</div>
-                    <div><?= status_badge_html($next_reservation['status']) ?></div>
-                </div>
+                <?php // Vietnamese: chi hien thi (display-only) - tinh san o PHP phia tren, khong phai du lieu/truong moi. ?>
+                <div class="gl-next-countdown"><?= e($next_countdown) ?></div>
             </div>
         <?php endif; ?>
     </div>
@@ -122,8 +158,9 @@ require __DIR__ . '/../includes/header.php';
         <a href="<?= BASE_URL ?>/customer/book.php" class="btn btn-outline-secondary btn-sm">Book a Table to get started</a>
     </div>
 <?php else: ?>
+    <?php // Vietnamese: class "gl-history-table" ap dung LAI dung kieu chu nhan/gia tri (label uppercase mo mau, gia tri dam 600) cua the "next reservation" o tren, de trang giu tinh mach lac (yeu cau muc 4). ?>
     <div class="table-responsive">
-        <table class="table align-middle">
+        <table class="table align-middle gl-history-table">
             <thead>
                 <tr>
                     <th>Date</th>

@@ -826,3 +826,39 @@ scoped entirely inside `@supports (backdrop-filter: blur(1px))` — browsers
 without support simply never see that rule and keep the plain solid
 `--gl-primary` background with just the scroll shadow, never a
 transparent or unstyled state.
+
+### 9.11 Next-reservation card — spacing, hierarchy, human-readable date
+
+**Decision (2026-08-05):** `customer/dashboard.php`'s "next reservation"
+card moved from four cramped fields plus dead right-side space to a
+`2fr 1fr 1fr auto` grid (date/time given the most room, since it now shows
+two lines) with a countdown line (`Today`/`Tomorrow`/`In N days`, computed
+server-side from the already-fetched reservation date — display only, no
+new query) filling what used to be empty space on the right. Stacks to two
+columns at Bootstrap's `md` breakpoint and one at `sm`, matching §6's
+existing "no custom breakpoint scale" rule — the breakpoints used are
+Bootstrap's own pixel values, CSS Grid is only used for the `fr`-ratio
+columns Bootstrap's own grid can't express.
+
+**Spacing note — two different token roles, not a contradiction:** the
+brief asked for `--gl-space-4` "between label and value" in one place and
+`--gl-space-1` "gap to their value" in another. Resolved as two different
+relationships: `--gl-space-1` is the tight coupling *within* one field
+(its own label sitting directly above its own value — they read as one
+unit); `--gl-space-4`/`--gl-space-5` are the row/column gaps *between*
+distinct fields in the grid, where real separation is what makes the
+layout scannable. Same numbers would collapse that distinction.
+
+**Date formatting:** `l, j F Y` (PHP `DateTimeImmutable::format()`) →
+"Thursday, 6 August 2026" instead of the raw `2026-08-06`. The slot uses a
+spaced en dash ("11:00 – 12:30") as a deliberate exception to the
+punctuation sweep's "time ranges keep a plain hyphen" rule from the
+previous phase — that rule was about dense tabular time ranges (e.g. a
+slot-picker dropdown); this is a large single hero display where the
+wider dash reads better, and the instruction for this specific field was
+explicit.
+
+**Muted label colour re-verified in this specific context:** `#5b6960` on
+the card's white background (not the page's `--gl-bg`) measures **5.78:1**
+— comfortably clears AA; the underline/badge-padding changes don't touch
+colour at all so needed no new check.
