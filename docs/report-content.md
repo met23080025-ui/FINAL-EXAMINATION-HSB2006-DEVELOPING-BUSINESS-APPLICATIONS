@@ -335,6 +335,19 @@ the future) server-side, not merely by hiding the button in the UI.
 ## 8. Implementation evidence — annotated screenshots
 *(fill progressively Phases P5-P7 — both customer and admin functions)*
 
+**Phase P7 status (2026-08-05):** FR-09…FR-15 are implemented and smoke-tested
+end-to-end (see `docs/test-plan.md` for formal cases to be logged in Phase
+P8): `admin/bookings.php` (search/filter/sort/pagination on top of the P6
+approval queue), `admin/tables.php` and `admin/timeslots.php` (full CRUD,
+deactivate-instead-of-delete when reservations reference the row, overlap
+validation for time slots), `admin/users.php` (search/role filter,
+activate/deactivate, role change, self-protection enforced server-side),
+`admin/dashboard.php` (four live-SQL summary tiles + pending-queue preview),
+`admin/reports.php` (date-range stats, HTML/CSS bar charts, CSV export), and
+`customer/dashboard.php` (next reservation, status counts, recent history).
+Screenshots for this section still need to be captured manually per the
+reminder below — nothing here substitutes for that.
+
 ## 9. Security controls and input-validation approach
 
 **Authentication (Phase P5 — `auth/register.php`, `auth/login.php`,

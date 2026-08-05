@@ -33,4 +33,21 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    // Vietnamese: form loc (filter) mang class "js-auto-submit" se tu dong
+    // gui lai khi mot truong <select>/date/checkbox ben trong no doi gia tri,
+    // khong can bam nut "Filter" - tien loi cho admin loc nhanh qua nhieu lua
+    // chon. CHI gan vao su kien "change" (kich hoat luc rieng focus / chon
+    // xong), KHONG gan vao "input"/"keyup" - neu gan vao "input" thi o
+    // <input type="text"> se tu gui sau MOI phim go, "nhot" nguoi dung go
+    // ban phim (mat focus giua chung, con tro nhay ve dau) - dung "change"
+    // tren the text/date cung chi kich hoat luc blur (roi khoi o), khong
+    // phai tung phim go.
+    document.querySelectorAll('form.js-auto-submit').forEach(function (form) {
+        form.querySelectorAll('select, input[type="date"], input[type="checkbox"]').forEach(function (field) {
+            field.addEventListener('change', function () {
+                form.submit();
+            });
+        });
+    });
 });
