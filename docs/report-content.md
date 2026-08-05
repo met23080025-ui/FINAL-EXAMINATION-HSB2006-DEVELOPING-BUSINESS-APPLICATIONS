@@ -393,22 +393,176 @@ reminder below — nothing here substitutes for that.
   (`WHERE email = ? AND id != ?`); password changes require the correct
   current password (`password_verify()`) before a new hash is written.
 
-*(remaining sections — input validation for the booking workflow, admin
-CRUD, and the full defect list — fill progressively through Phase P8.)*
+**SQL injection (Phase P7/P8 — every query site, `includes/listing.php`):**
+100% of queries are PDO prepared statements with bound values
+(`PDO::ATTR_EMULATE_PREPARES => false` in `includes/db.php`, native
+prepares). The one gap prepared statements structurally cannot close is
+**identifiers** — a bound parameter can only stand in for a value, never a
+column name, so the admin listing pages' sortable columns
+(`admin/bookings.php`, `admin/tables.php`, `admin/timeslots.php`,
+`admin/users.php`) resolve the `?sort=` URL parameter through a hard-coded
+**whitelist** (`resolve_sort()` in `includes/listing.php`) before it ever
+touches the `ORDER BY` clause — any value not in the whitelist silently
+falls back to the page's default column rather than being concatenated in.
+`LIMIT`/`OFFSET` are bound as `PDO::PARAM_INT` explicitly, since native
+prepares reject string-typed values there.
 
-Data-integrity control already captured ahead of P8: `docs/evidence/double-booking-proof.md`
-documents the live database-level proof that the double-booking constraint
-(the `uq_reservations_active_slot` unique index on the generated column
-`active_slot_key`) rejects a direct duplicate-insert attempt with MySQL error
-1062, run inside a rolled-back transaction against the real seeded database —
-not just a design claim. Includes exact reproduction steps to re-run live
-during the demo/viva.
+**Admin CRUD input validation (Phase P7 — `admin/tables.php`,
+`admin/timeslots.php`):** table code must match `/^[A-Z][0-9]{2}$/` and be
+unique (checked excluding the row's own id on edit); capacity must be
+1–20; area must be one of the four locked ENUM values. Time slots require
+`end_time > start_time` and are checked for overlap against every other
+currently-**active** slot (`start < new_end AND end > new_start`), again
+excluding the row's own id on edit. Both pages refuse a hard `DELETE` when
+`SELECT COUNT(*) FROM reservations WHERE table_id/time_slot_id = ?` is
+non-zero, offering deactivation (`is_active = 0`) instead — this keeps
+booking history intact and is backed by the schema's own
+`ON DELETE RESTRICT` foreign keys as a second layer, so the check being
+bypassed somehow would still not allow an orphaned reservation row.
+
+**Admin self-protection (Phase P7 — `admin/users.php`):** an admin cannot
+deactivate or change the role of their own currently-logged-in account,
+checked server-side before any action-specific branch runs (not just a
+hidden button), because there is no separate "recovery" admin account or
+CLI tool in this project's scope to undo a self-lockout.
+
+**Full defect list:** see `docs/test-plan.md`'s "Known unresolved defects"
+table at the bottom, filled in as each of its 43 test cases is actually
+run. One candidate is already flagged in that document (TC-28):
+`can_transition()` permits a `confirmed → completed/no_show` transition
+regardless of whether the booking's date/time has actually passed — the
+UI only ever exposes the buttons once it has, but a forged direct POST
+could act early. Decide before submission whether to close this gap or
+accept and document it as a known limitation.
+
+Full control-by-control detail, each referenced to its exact implementing
+file, is in **`docs/security-review.md`** — written as a standalone
+document so it can be read side by side with the code; the table below is
+its summary:
+
+| Control | Implemented in | Defends against |
+|---|---|---|
+| PDO prepared statements (100% of queries) | `includes/db.php` + every query site | SQL injection via values |
+| ORDER BY column whitelist | `includes/listing.php` | SQL injection via identifiers |
+| `password_hash()`/`password_verify()` | `auth/register.php`, `auth/login.php` | Credential theft on data breach |
+| Dummy-hash timing defence | `auth/login.php` | Timing-based user enumeration |
+| Generic login error message | `auth/login.php` | Message-based user enumeration |
+| `session_regenerate_id(true)` | `auth/login.php`, `auth/logout.php` | Session fixation |
+| CSRF token + `hash_equals()` | `includes/helpers.php` + every POST form | Cross-site request forgery |
+| `e()` / `htmlspecialchars(ENT_QUOTES)` | `includes/helpers.php` + every dynamic echo | Stored/reflected XSS |
+| Server-side re-validation of every client rule | throughout | Client-side-bypass |
+| `require_login()` / `require_admin()` | `includes/auth.php` | Unauthorised access |
+| Admin self-protection check | `admin/users.php` | Accidental/malicious admin lockout |
+| Two-layer double-booking defence | `customer/book.php` + `database/schema.sql` | Race-condition double-booking |
+| `safe_redirect_target()` | `includes/helpers.php` | Open redirect / phishing |
+| `ON DELETE RESTRICT` + deactivate-vs-delete | `database/schema.sql` + admin CRUD pages | Orphaned reservation records |
+| `config.php` gitignored | `.gitignore` | Credential leakage via source control |
+
+Data-integrity control captured with live evidence:
+`docs/evidence/double-booking-proof.md` documents the database-level proof
+that the double-booking constraint (the `uq_reservations_active_slot`
+unique index on the generated column `active_slot_key`) rejects a direct
+duplicate-insert attempt with MySQL error 1062, run inside a rolled-back
+transaction against the real seeded database — not just a design claim —
+plus a UI-level reproduction (§7 of that document) showing the same
+guarantee holds end to end through `customer/book.php`, with the two
+defence layers explained and which one a human-timed demo will actually
+show.
 
 ## 10. Test plan, test cases, results, and unresolved defects
-*(fill Phase P8)*
+
+Full test plan: **`docs/test-plan.md`** — 43 test cases across 10 modules
+(Registration, Login/Logout, Access control, Open-redirect, Booking
+happy-path/edge-cases, Cancellation, Admin status transitions, Admin CRUD
+validation, Self-protection, Search/filter/sort/pagination, Reports/CSV,
+Security probes). Each case has an ID, module, objective, preconditions,
+exact steps, and expected result; **Actual result** and **Pass/Fail**
+columns are filled in by hand as each case is executed against a fresh
+`schema.sql` + `seed.sql` import. Known unresolved defects (populated as
+cases are run) are logged in that same document's final table — copy the
+completed table into this section once testing is finished, along with a
+short summary of the pass rate (e.g. "41/43 passed on first run; 2 defects
+found and fixed, re-tested and passing" or similar, once true).
 
 ## 11. Installation/setup guide, test accounts, repository link, and live/local application link
-*(fill Phase P9)*
+
+**Repository:**
+https://github.com/met23080025-ui/FINAL-EXAMINATION-HSB2006-DEVELOPING-BUSINESS-APPLICATIONS
+
+**Local application URL (XAMPP):** `http://localhost/golden-lotus/`
+
+**Prerequisites:** [XAMPP](https://www.apachefriends.org/) (Apache +
+MySQL/MariaDB + PHP 8.x). Verified against PHP 8.0.30; no version-specific
+syntax beyond PHP 8.0 is used, so any current PHP 8.2+ release should also
+work.
+
+**Setup steps:**
+1. Start Apache and MySQL from the XAMPP control panel.
+2. Clone/copy the repository into `C:\xampp\htdocs\golden-lotus` (or the
+   equivalent `htdocs` path on macOS/Linux XAMPP).
+3. Copy `config.sample.php` to `config.php` and fill in DB credentials
+   (defaults `root` / empty password match a stock XAMPP install).
+   `config.php` is gitignored and must never be committed.
+4. Open phpMyAdmin (`http://localhost/phpmyadmin`), create a database named
+   to match `DB_NAME` in `config.php` (default `golden_lotus`), then import
+   `database/schema.sql` first, then `database/seed.sql` second.
+5. Visit `http://localhost/golden-lotus/` (adjust `BASE_URL` in
+   `config.php` if the folder name differs).
+
+**Test accounts** (all share the demo password `Password123!`, stored only
+as a real bcrypt hash — see `docs/security-review.md` §3 for why every
+seeded account's hash is byte-identical and why that's expected):
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@goldenlotus.test | Password123! |
+| Customer | customer1@goldenlotus.test … customer6@goldenlotus.test | Password123! |
+
+**Demo dataset:** ~57 reservations spanning the 14 days before import
+through 7 days after, computed relative to `CURDATE()` at import time (not
+hard-coded dates), so the dataset stays "current" no matter when it's
+re-imported for grading. A deliberate pending backlog is seeded in the next
+2 days so the admin approval queue is never empty on a fresh import.
 
 ## 12. References, third-party assets, and AI/tool-use declaration
-*(fill Phase P9 — include the AI usage declaration table)*
+
+**Third-party assets:**
+
+| Asset | Licence | Use |
+|---|---|---|
+| [Bootstrap 5.3.3](https://getbootstrap.com/) | MIT License | UI component library + grid, loaded via `cdn.jsdelivr.net`, no local copy vendored |
+
+*(TODO — add any additional icon sets, fonts, or images if introduced
+before submission; none beyond Bootstrap are used as of Phase P7.)*
+
+**References:** *(TODO by hand — cite the HSB2006 course materials/rubric
+document and any external documentation consulted, e.g. PHP manual pages
+for `password_hash`/PDO, MDN for specific HTML5 attributes, in whatever
+citation style the lecturer's report template requires.)*
+
+**AI/tool-use declaration:** an interim, phase-by-phase record of what AI
+assistance was used for and how the output was verified is maintained
+throughout development in `docs/development-log.md` (see its "AI usage
+record" section) — copy/format that table into the final report here.
+**TODO by hand before submission:**
+- Review the `docs/development-log.md` AI-usage table for accuracy against
+  what actually happened in each session.
+- Add any AI usage from Phases P8/P9 that happens *after* this handover
+  (e.g. if a teammate uses another AI tool to help write remaining
+  report prose).
+- State explicitly, per the course's requirement, that AI usage does not
+  transfer responsibility for correctness, security, licensing, or
+  originality — the team verified and takes ownership of all code and
+  content submitted.
+
+**TODO by hand — not yet knowable from the codebase:**
+- Full names for the cover page and `docs/requirements.md` §11 team table
+  (currently only student ID 23080025 / GitHub `met23080025-ui` is on
+  record).
+- Final submission filenames per `CLAUDE.md`
+  (`HSB2006_MET4_23080025_<FullName>_Report.pdf` etc.) once the full name
+  is filled in.
+- GitHub Project board link (`docs/requirements.md` §12) once created.
+- Screenshots for §8 — see `docs/screenshot-checklist.md` for the full,
+  page-by-page list.
+- Test-plan Actual result/Pass-Fail columns and the defect list (§10).
