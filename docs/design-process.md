@@ -404,3 +404,180 @@ future path for this booking," not "which actor performs it."
   a single status→colour mapping (§5) is defined once here and must be
   reused on every screen that shows a status, so the customer and admin
   interfaces stay visually consistent (NFR-05).
+
+## 9. Polish pass (UI modernisation)
+
+A later visual-upgrade pass (post Phase P7, application already
+functionally complete) added depth, motion, and a signature identity on
+top of everything above — **presentation only**, no business logic
+changed, the locked status-badge colour mapping (§5.1) and the core
+palette are untouched, and no new CDN/library was introduced (pure CSS +
+hand-drawn inline SVG + vanilla JS, per the constraint that started this
+pass). Every new token still derives from `--gl-primary`/`--gl-accent` —
+nothing invents a new hue outside the palette locked in §5.1.
+
+### 9.1 New tokens
+
+All added to `public/css/style.css :root`, alongside (not replacing) the
+§5 tokens:
+
+| Token | Value | Use |
+|---|---|---|
+| `--gl-shadow-1` | soft, 2-layer, ~6-10% opacity | Default resting elevation (cards, buttons) |
+| `--gl-shadow-2` | medium, 2-layer, ~6-10% opacity, larger blur | Hover/lift state |
+| `--gl-shadow-3` | largest, 2-layer | Toasts, modals, hero — content that visually "floats" above the page |
+| `--gl-radius-sm` | `0.375rem` | Buttons, inputs |
+| `--gl-radius-md` | `0.75rem` | Cards, tiles, filter bars |
+| `--gl-radius-lg` | `1.25rem` | Hero, auth split panel, modal, empty states |
+| `--gl-t-fast` | `150ms ease` | Micro-interactions (focus glow, icon colour swap) |
+| `--gl-t-base` | `250ms ease` | Card/button lift, modal, toast |
+| `--gl-grad-hero` | radial gold glow (top-right) + linear green wash | Landing page hero background |
+| `--gl-grad-panel` | linear green wash, 3 stops | Auth split-layout decorative panel |
+| `--gl-grad-card` | linear, very low-opacity gold→green | Subtle depth on cards/tiles/empty states without leaving the `--gl-bg` family |
+
+Shadows are deliberately soft and layered (two shadows per token: a tight
+near-black-at-low-opacity layer plus a larger, softer spread) rather than
+a single hard drop-shadow — "never harsh" was the brief, and a single
+sharp shadow reads as a dated, flat design choice on a warm off-white
+background like `--gl-bg`.
+
+### 9.2 Reduced-motion — accessibility decision
+
+`@media (prefers-reduced-motion: reduce)` in `public/css/style.css`
+collapses **every** animation/transition duration to near-zero
+(`0.01ms !important`) for every element, in one universal rule, rather
+than disabling each new effect individually. Two reasons for the blanket
+approach over a piecemeal one: (1) it's easy to add a new animated
+component later and forget to add its own reduced-motion carve-out — a
+universal rule closes that gap by construction; (2) the actual harm
+motion causes some users (vestibular disorders — nausea, dizziness
+triggered by on-screen movement, independent of whether any single
+animation "seems small") doesn't scale down gracefully with a smaller
+animation, so partial compliance isn't a meaningfully safer middle ground
+than full compliance. Every new animated feature in this pass (hero
+entrance, scroll-reveal, toast slide-in, count-up tiles, report bar
+growth, table-card stagger, row highlight, modal scale) was built to
+degrade to "instant, correct final state" under this rule, not to break or
+disappear — verified per component in §9.5.
+
+### 9.3 Focus-visible — dual-layer ring, and why not a plain accent outline
+
+Every interactive element gets a single global rule:
+```css
+:focus-visible {
+  outline: 2px solid var(--gl-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgba(201, 162, 39, 0.32);
+}
+```
+This replaces the narrower, component-specific focus rule from earlier
+phases. The brief asked for an accent-coloured focus indicator, but §5.2
+already proved `--gl-accent` (`#C9A227`) on `--gl-bg` measures **2.28:1**
+— failing not just the 4.5:1 text threshold but also WCAG 1.4.11's
+**3:1 minimum for non-text UI components**, which explicitly includes
+focus indicators. A solid `--gl-accent` outline would therefore be a
+genuine accessibility regression, not a style preference to weigh against
+brand consistency. The resolution: the crisp, measurable outline is
+`--gl-primary` (already proven **7.94:1** against every surface in the
+app per §5.2's table), and `--gl-accent` is used only in a soft,
+translucent `box-shadow` "halo" around it — decorative, not
+the thing a low-vision user depends on to see where focus is, but still
+enough for the ring to visibly read as gold-accented at normal viewing
+distance. Same restriction already governed `--gl-accent` for text in
+§5.2; this extends the identical reasoning to non-text UI, which is the
+correct WCAG category for a focus ring.
+
+### 9.4 The lotus motif — a hand-drawn, licence-free signature
+
+`svg_lotus_motif()` in `includes/icons.php` draws a five-petal lotus
+(one `<path>` "petal" shape, repeated four times via `transform="rotate"`
+around a shared point) over two ripple-arc strokes at the base — pure
+line art (`fill="none"`, `stroke="currentColor"`), so it always inherits
+whatever colour context it's placed in (white on the hero, `--gl-primary`
+in empty states, low-opacity on the auth panel) without a second colour
+declaration anywhere it's used. Every other icon in the app (area glyphs,
+admin tile icons, the sort-direction chevron, the table-selection check)
+follows the same stroke-only, `currentColor`, hand-drawn convention in the
+same file — deliberately, so the whole icon set reads as one system
+instead of a mix of styles.
+
+**Why draw it instead of using an icon library:** the brief ruled out
+icon libraries and stock imagery entirely, but the deeper reason this is
+the right call for a restaurant named "Golden Lotus" specifically is
+identity — a generic Bootstrap-Icons flower glyph (if one even existed)
+would look like every other template; a motif built from scratch for this
+project cannot be mistaken for one, and comes with zero licensing
+question to document (compare: the Google Fonts pairing rejected in §8
+specifically to avoid exactly this kind of external dependency/licensing
+overhead).
+
+**Where it's used — deliberately sparse, per the brief:** the hero corner
+(low opacity, positioned away from the CTA and heading text, §9.6), the
+auth split-layout panel, every `.gl-empty-state` across the app (replacing
+the ad hoc per-page emoji icons used immediately after Phase P7 — one
+motif everywhere reads as intentional branding, six different emoji read
+as unfinished), and a small footer mark. It is always `aria-hidden="true"`
+— purely decorative, never the only carrier of information.
+
+### 9.5 Component-by-component reduced-motion behaviour
+
+| Component | Normal behaviour | Under `prefers-reduced-motion: reduce` |
+|---|---|---|
+| Hero heading/CTA entrance | Fade + slide-up, staggered | CSS duration collapses to ~0 — content appears instantly in its final position |
+| Scroll-reveal (landing page area cards) | IntersectionObserver adds `.is-visible`, CSS fades/slides it in | Same class logic still runs (visibility isn't motion), but the transition itself is instant per the CSS rule |
+| Toast slide-in / auto-dismiss | Slides in, success/info/warning auto-dismiss after 4s with a shrinking progress line | Slide-in is instant; auto-dismiss timing is driven by a JS `setTimeout` independent of the CSS animation, so the 4s dismiss still happens on schedule even though the progress line no longer visibly animates |
+| Admin tile count-up | Numbers animate 0→value over ~650ms (`requestAnimationFrame`) | JS checks `matchMedia('(prefers-reduced-motion: reduce)')` and skips the animation loop entirely — the PHP-rendered final value is left untouched (it was never blanked to "0" in the first place) |
+| Report bar growth | Bars grow from 0% to their value on load | JS still sets the target width (so the correct bar length is reached), but the CSS `transition` duration is ~0, so it appears instantly at full length instead of animating |
+| Table-card stagger (book.php) | Cards fade in with a small per-card delay | All cards appear together, instantly |
+| Row highlight (post-booking/cancel) | 2s colour fade on the affected row | Colour still applies and is still removed on the same JS timer, just without the animated fade — reads as a brief instant highlight instead |
+| Modal open/close | Scale + fade | Instant show/hide (Bootstrap's own show/hide logic is untouched; only the CSS transition is neutralised) |
+
+No component becomes non-functional or hides content under reduced
+motion — the rule is "remove the animation, keep the end state," checked
+per row above rather than assumed.
+
+### 9.6 Contrast re-verification for new gradient/colour surfaces
+
+Every text-bearing surface introduced in this pass was checked against
+the same WCAG 2.1 relative-luminance method used in §5.2, not assumed:
+
+| Foreground / background | Ratio | AA normal (4.5:1) |
+|---|---|---|
+| White on `--gl-grad-hero`'s lightest stop (`#0e7048`) | **6.12:1** | Pass |
+| White on `--gl-grad-hero`'s middle stop (`#0b5d3b`) | **7.95:1** | Pass (matches §5.2's existing figure) |
+| White on `--gl-grad-hero`'s darkest stop (`#073c26`) | **12.48:1** | Pass |
+| New `.text-muted`/`.form-text` colour (`#5b6960`) on `--gl-bg` | **5.44:1** | Pass |
+| New `.text-muted`/`.form-text` colour (`#5b6960`) on white (card surfaces) | **5.78:1** | Pass |
+
+The hero heading sits inside `.gl-hero-content`, positioned toward the
+left/centre of the block, while the gradient's only non-linear element —
+the radial gold "glow" — is confined to the top-right corner
+(`radial-gradient(... at 88% 8% ...)`) where the decorative lotus motif
+lives, not the heading. Because the *linear* portion of the gradient
+(which is what sits behind the actual text) ranges only between the three
+stops measured above, and the lowest of those three already clears AA at
+6.12:1, the heading's contrast is safe at every point along that range
+without needing to model the radial layer's blend at all — the text
+simply never overlaps it. `--gl-accent` itself is still never used as
+text colour anywhere in this pass, consistent with §5.2's original
+restriction.
+
+### 9.7 Alternatives considered and rejected (this pass)
+
+- **A JavaScript charting library for the reports bar chart** — rejected;
+  the existing HTML/CSS bar chart from Phase P7 already satisfies "no
+  charting library," and animating its existing `width` transition (JS
+  only toggles a `data-target-width` value) achieves the same "grows on
+  load" effect without adding a dependency.
+- **`--gl-accent` as a solid focus-ring colour** — rejected; see §9.3.
+- **Per-page emoji for empty-state icons** (the Phase P7 interim
+  approach) — replaced with the single lotus motif everywhere; keeping
+  emoji would have been faster but reads as unintentional/inconsistent
+  once every other surface in the app carries a deliberate hand-drawn
+  identity.
+- **CSS-only `:has()` for table-card selection with no JS fallback** —
+  `:has()` is supported on every browser NFR-04 targets (current stable
+  Chrome/Firefox/Edge), so it's used as the primary mechanism, but a small
+  JS listener still mirrors the same state into an `.is-selected` class as
+  a low-cost belt-and-suspenders measure, not because `:has()` is expected
+  to fail.

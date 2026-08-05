@@ -94,11 +94,11 @@ require __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h1 class="h3 mb-4 text-center">Register</h1>
-                <form method="post" action="<?= BASE_URL ?>/auth/register.php" novalidate>
+    <div class="col-lg-9 col-xl-8">
+        <div class="gl-auth-split row g-0">
+            <div class="col-12 col-md-6 gl-auth-form-pane">
+                <h1 class="h3 mb-4">Register</h1>
+                <form method="post" action="<?= BASE_URL ?>/auth/register.php" class="js-disable-on-submit" novalidate>
                     <?= csrf_field() ?>
 
                     <div class="mb-3">
@@ -163,6 +163,14 @@ require __DIR__ . '/../includes/header.php';
                     <button type="submit" class="btn btn-gl-primary w-100">Create account</button>
                 </form>
                 <p class="text-center mt-3 mb-0"><small>Already have an account? <a href="<?= BASE_URL ?>/auth/login.php">Log in</a></small></p>
+            </div>
+
+            <div class="col-md-6 d-none d-md-flex gl-auth-panel">
+                <?= svg_lotus_motif('gl-auth-panel-motif') ?>
+                <div>
+                    <h2 class="mb-3">Join Golden Lotus</h2>
+                    <p class="mb-0">Create an account to browse live availability and book your table in under a minute.</p>
+                </div>
             </div>
         </div>
     </div>

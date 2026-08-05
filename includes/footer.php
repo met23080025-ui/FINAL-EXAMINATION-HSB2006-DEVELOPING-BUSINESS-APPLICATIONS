@@ -10,6 +10,7 @@
 
 <footer class="text-center text-muted py-4 border-top">
     <div class="container small">
+        <?= svg_lotus_motif('gl-footer-motif', '2.5rem') ?>
         &copy; <?= date('Y') ?> Golden Lotus Restaurant &mdash; HSB2006 MET4 student project, for academic demonstration only.
     </div>
 </footer>

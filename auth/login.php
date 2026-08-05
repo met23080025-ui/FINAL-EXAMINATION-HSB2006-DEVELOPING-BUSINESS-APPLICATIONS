@@ -81,16 +81,16 @@ require __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card">
-            <div class="card-body">
-                <h1 class="h3 mb-4 text-center">Login</h1>
+    <div class="col-lg-9 col-xl-8">
+        <div class="gl-auth-split row g-0">
+            <div class="col-12 col-md-6 gl-auth-form-pane d-flex flex-column justify-content-center">
+                <h1 class="h3 mb-4">Login</h1>
 
                 <?php if (isset($errors['login'])): ?>
                     <div class="alert alert-danger"><?= e($errors['login']) ?></div>
                 <?php endif; ?>
 
-                <form method="post" action="<?= BASE_URL ?>/auth/login.php" novalidate>
+                <form method="post" action="<?= BASE_URL ?>/auth/login.php" class="js-disable-on-submit" novalidate>
                     <?= csrf_field() ?>
                     <?php if ($safe_redirect !== null): ?>
                         <input type="hidden" name="redirect" value="<?= e($safe_redirect) ?>">
@@ -116,6 +116,15 @@ require __DIR__ . '/../includes/header.php';
                     <button type="submit" class="btn btn-gl-primary w-100">Log in</button>
                 </form>
                 <p class="text-center mt-3 mb-0"><small>No account? <a href="<?= BASE_URL ?>/auth/register.php">Register</a></small></p>
+            </div>
+
+            <?php // Vietnamese: cot trang tri chi hien tu breakpoint md tro len ("single column below md" theo yeu cau nang cap giao dien) - duoi md chi con form, danh toan bo chieu rong cho form tren man hinh nho. ?>
+            <div class="col-md-6 d-none d-md-flex gl-auth-panel">
+                <?= svg_lotus_motif('gl-auth-panel-motif') ?>
+                <div>
+                    <h2 class="mb-3">Welcome back</h2>
+                    <p class="mb-0">Authentic Vietnamese dining, reserved in seconds &mdash; sign in to manage your table.</p>
+                </div>
             </div>
         </div>
     </div>

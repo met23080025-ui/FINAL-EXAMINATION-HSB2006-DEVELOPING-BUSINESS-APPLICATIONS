@@ -97,24 +97,33 @@ require __DIR__ . '/../includes/header.php';
 <h1 class="h3 mb-4">Admin Dashboard</h1>
 <p class="text-muted">Welcome, <?= e(current_user()['full_name']) ?>.</p>
 
+<?php
+/*
+ * Vietnamese: moi tile so lieu dung data-count-target de main.js chay hoat
+ * hinh "dem tang dan" (~650ms, easeOutCubic, tu dong bo qua neu
+ * prefers-reduced-motion) - noi dung TEXT ben trong van la con so PHP render
+ * san (khong phai "0"), nen neu JS tat hoac bi loi, so hien DUNG ngay tu dau,
+ * khong bao gio phu thuoc JS moi doc duoc.
+ */
+?>
 <div class="gl-tile-row">
     <div class="gl-tile gl-tile-today">
-        <div class="gl-tile-icon">📅</div>
-        <div class="gl-tile-value"><?= e((string) $today_count) ?></div>
+        <div class="gl-tile-icon"><?= svg_icon_calendar() ?></div>
+        <div class="gl-tile-value" data-count-target="<?= e((string) $today_count) ?>"><?= e((string) $today_count) ?></div>
         <div class="gl-tile-label">Today's Bookings</div>
     </div>
     <div class="gl-tile gl-tile-pending">
-        <div class="gl-tile-icon">⏳</div>
-        <div class="gl-tile-value"><?= e((string) $pending_count) ?></div>
+        <div class="gl-tile-icon"><?= svg_icon_hourglass() ?></div>
+        <div class="gl-tile-value" data-count-target="<?= e((string) $pending_count) ?>"><?= e((string) $pending_count) ?></div>
         <div class="gl-tile-label">Pending Approval</div>
     </div>
     <div class="gl-tile gl-tile-cancel">
-        <div class="gl-tile-icon">🚫</div>
-        <div class="gl-tile-value"><?= e((string) $cancellation_rate) ?>%</div>
+        <div class="gl-tile-icon"><?= svg_icon_cancel_circle() ?></div>
+        <div class="gl-tile-value" data-count-target="<?= e((string) $cancellation_rate) ?>" data-count-suffix="%"><?= e((string) $cancellation_rate) ?>%</div>
         <div class="gl-tile-label">Cancellation Rate</div>
     </div>
     <div class="gl-tile gl-tile-busiest">
-        <div class="gl-tile-icon">🔥</div>
+        <div class="gl-tile-icon"><?= svg_icon_flame() ?></div>
         <div class="gl-tile-value">
             <?= $busiest_slot !== false
                 ? e(substr($busiest_slot['start_time'], 0, 5) . '-' . substr($busiest_slot['end_time'], 0, 5))
@@ -132,7 +141,7 @@ require __DIR__ . '/../includes/header.php';
 <?php if (empty($pending_preview)): ?>
     <?php // Vietnamese: cau chu chinh xac lay tu docs/design-process.md §7 ?>
     <div class="gl-empty-state">
-        <div class="gl-empty-icon">✅</div>
+        <div class="gl-empty-icon"><?= svg_lotus_motif() ?></div>
         <p class="mb-0">No pending bookings right now &mdash; you're all caught up.</p>
     </div>
 <?php else: ?>

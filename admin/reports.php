@@ -160,13 +160,19 @@ $total_in_range = (int) $total_in_range_stmt->fetchColumn();
 
 /**
  * Sinh HTML cho MOT hang trong bieu do cot ngang (thanh dai ti le voi $count/$max).
+ *
+ * Vietnamese: thanh cot render san voi width:0% + data-target-width="<pct>" -
+ * public/js/main.js doi sang gia tri that ngay sau khi trang ve xong de
+ * transition CSS (.gl-bar-fill trong style.css) tao hieu ung "lon dan tu 0".
+ * $index dung de so le (stagger) hieu ung mo dan (fade-in) cua CA HANG qua
+ * bien CSS --gl-row-i (xem .gl-bar-row trong style.css).
  */
-function bar_row_html(string $label, int $count, int $max): string
+function bar_row_html(string $label, int $count, int $max, int $index = 0): string
 {
     $pct = $max > 0 ? round(($count / $max) * 100) : 0;
-    return '<div class="gl-bar-row">'
+    return '<div class="gl-bar-row" style="--gl-row-i: ' . $index . ';">'
         . '<div class="text-truncate">' . e($label) . '</div>'
-        . '<div class="gl-bar-track"><div class="gl-bar-fill" style="width:' . $pct . '%"></div></div>'
+        . '<div class="gl-bar-track"><div class="gl-bar-fill" style="width:0%" data-target-width="' . $pct . '"></div></div>'
         . '<div class="gl-bar-value">' . e((string) $count) . '</div>'
         . '</div>';
 }
@@ -201,7 +207,7 @@ require __DIR__ . '/../includes/header.php';
 
 <?php if ($total_in_range === 0): ?>
     <div class="gl-empty-state">
-        <div class="gl-empty-icon">📊</div>
+        <div class="gl-empty-icon"><?= svg_lotus_motif() ?></div>
         <p class="mb-0">No bookings in this date range. Try a wider range.</p>
     </div>
 <?php else: ?>
@@ -212,8 +218,8 @@ require __DIR__ . '/../includes/header.php';
                     <h2 class="h6 mb-3">Bookings per day</h2>
                     <div class="gl-bar-chart">
                         <?php $max_day = max(array_column($per_day, 'count')) ?: 1; ?>
-                        <?php foreach ($per_day as $row): ?>
-                            <?= bar_row_html($row['label'], $row['count'], $max_day) ?>
+                        <?php foreach ($per_day as $i => $row): ?>
+                            <?= bar_row_html($row['label'], $row['count'], $max_day, $i) ?>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -226,8 +232,8 @@ require __DIR__ . '/../includes/header.php';
                     <h2 class="h6 mb-3">Bookings by status</h2>
                     <div class="gl-bar-chart">
                         <?php $max_status = max(array_column($by_status, 'cnt')) ?: 1; ?>
-                        <?php foreach ($by_status as $row): ?>
-                            <?= bar_row_html(ucfirst(str_replace('_', ' ', $row['status'])), (int) $row['cnt'], $max_status) ?>
+                        <?php foreach ($by_status as $i => $row): ?>
+                            <?= bar_row_html(ucfirst(str_replace('_', ' ', $row['status'])), (int) $row['cnt'], $max_status, $i) ?>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -240,8 +246,8 @@ require __DIR__ . '/../includes/header.php';
                     <h2 class="h6 mb-3">Bookings by area</h2>
                     <div class="gl-bar-chart">
                         <?php $max_area = max(array_column($by_area, 'cnt')) ?: 1; ?>
-                        <?php foreach ($by_area as $row): ?>
-                            <?= bar_row_html(format_area_label($row['area']), (int) $row['cnt'], $max_area) ?>
+                        <?php foreach ($by_area as $i => $row): ?>
+                            <?= bar_row_html(format_area_label($row['area']), (int) $row['cnt'], $max_area, $i) ?>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -254,8 +260,8 @@ require __DIR__ . '/../includes/header.php';
                     <h2 class="h6 mb-3">Busiest slots (ranked)</h2>
                     <div class="gl-bar-chart">
                         <?php $max_slot = max(array_column($busiest_slots, 'cnt')) ?: 1; ?>
-                        <?php foreach ($busiest_slots as $row): ?>
-                            <?= bar_row_html(substr($row['start_time'], 0, 5) . '-' . substr($row['end_time'], 0, 5), (int) $row['cnt'], $max_slot) ?>
+                        <?php foreach ($busiest_slots as $i => $row): ?>
+                            <?= bar_row_html(substr($row['start_time'], 0, 5) . '-' . substr($row['end_time'], 0, 5), (int) $row['cnt'], $max_slot, $i) ?>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -264,7 +270,7 @@ require __DIR__ . '/../includes/header.php';
 
         <div class="col-md-6">
             <div class="gl-tile gl-tile-today h-100">
-                <div class="gl-tile-icon">👥</div>
+                <div class="gl-tile-icon"><?= svg_icon_people() ?></div>
                 <div class="gl-tile-value"><?= e((string) $avg_party_size) ?></div>
                 <div class="gl-tile-label">Average Party Size</div>
             </div>

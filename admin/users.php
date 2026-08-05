@@ -176,7 +176,7 @@ require __DIR__ . '/../includes/header.php';
 
 <?php if (empty($users)): ?>
     <div class="gl-empty-state">
-        <div class="gl-empty-icon">👤</div>
+        <div class="gl-empty-icon"><?= svg_lotus_motif() ?></div>
         <?php if ($has_active_filters): ?>
             <p class="mb-2">No users match these filters. Try widening the search or clearing a filter.</p>
             <a href="<?= e($script_path) ?>" class="btn btn-outline-secondary btn-sm">Clear filters</a>

@@ -29,7 +29,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_action'] ?? '') === '
 
     $reservation_id     = (int) ($_POST['reservation_id'] ?? 0);
     $redirect_status    = (string) ($_POST['status_filter'] ?? '');
-    $redirect_query     = in_array($redirect_status, $valid_statuses, true) ? '?status=' . urlencode($redirect_status) : '';
+    $redirect_params    = [];
+    if (in_array($redirect_status, $valid_statuses, true)) {
+        $redirect_params['status'] = $redirect_status;
+    }
+    // Vietnamese: them ?highlight=<id> de dong vua huy duoc lam noi bat mot
+    // lan sau redirect (Phase "Polish pass") - xem public/js/main.js.
+    $redirect_params['highlight'] = $reservation_id;
+    $redirect_query = '?' . http_build_query($redirect_params);
 
     // Vietnamese: kiem tra lai TOAN BO dieu kien o server - khong chi dua vao
     // viec nut Cancel co dang hien tren giao dien hay khong (JS/HTML co the
@@ -110,12 +117,16 @@ require __DIR__ . '/../includes/header.php';
 <?php if (empty($reservations)): ?>
     <?php if (!$has_any_reservation): ?>
         <?php // Vietnamese: cau chu chinh xac lay tu docs/design-process.md §7 (empty state - chua co booking nao). ?>
-        <div class="alert alert-warning">
-            You have no reservations yet.
-            <a href="<?= BASE_URL ?>/customer/book.php" class="alert-link">Book a Table</a> to get started.
+        <div class="gl-empty-state">
+            <div class="gl-empty-icon"><?= svg_lotus_motif() ?></div>
+            <p class="mb-2">You have no reservations yet.</p>
+            <a href="<?= BASE_URL ?>/customer/book.php" class="btn btn-outline-secondary btn-sm">Book a Table to get started</a>
         </div>
     <?php else: ?>
-        <div class="alert alert-warning">No reservations match this status filter.</div>
+        <div class="gl-empty-state">
+            <div class="gl-empty-icon"><?= svg_lotus_motif() ?></div>
+            <p class="mb-0">No reservations match this status filter.</p>
+        </div>
     <?php endif; ?>
 <?php else: ?>
     <div class="table-responsive">
@@ -138,7 +149,7 @@ require __DIR__ . '/../includes/header.php';
                     $slot_start = new DateTimeImmutable($r['reservation_date'] . ' ' . $r['start_time']);
                     $can_cancel = in_array($r['status'], ['pending', 'confirmed'], true) && $slot_start > $now;
                     ?>
-                    <tr>
+                    <tr data-reservation-id="<?= e((string) $r['id']) ?>">
                         <td><?= e($r['reservation_date']) ?></td>
                         <td><?= e(substr($r['start_time'], 0, 5) . '-' . substr($r['end_time'], 0, 5)) ?></td>
                         <td><?= e($r['table_code']) ?></td>
@@ -148,7 +159,7 @@ require __DIR__ . '/../includes/header.php';
                         <td><?= status_badge_html($r['status']) ?></td>
                         <td>
                             <?php if ($can_cancel): ?>
-                                <form method="post" action="<?= BASE_URL ?>/customer/my-reservations.php" class="d-inline">
+                                <form method="post" action="<?= BASE_URL ?>/customer/my-reservations.php" class="d-inline js-disable-on-submit">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="form_action" value="cancel_reservation">
                                     <input type="hidden" name="reservation_id" value="<?= e((string) $r['id']) ?>">

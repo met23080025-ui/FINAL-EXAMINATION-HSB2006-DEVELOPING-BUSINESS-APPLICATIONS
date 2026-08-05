@@ -72,7 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_action'] ?? '') === '
 
     if ($result['ok']) {
         set_flash('success', $result['message']);
-        redirect('/customer/my-reservations.php');
+        // Vietnamese: gan ?highlight=<id> de trang my-reservations.php lam
+        // noi bat mot lan dong vua tao (Phase "Polish pass") - xem
+        // public/js/main.js, highlightRowFromQueryString().
+        redirect('/customer/my-reservations.php?highlight=' . $result['reservation_id']);
     }
 
     // Vietnamese: that bai do dung trung UNIQUE INDEX (race condition, xem
@@ -160,9 +163,10 @@ require __DIR__ . '/../includes/header.php';
             <?php endforeach; ?>
         </div>
     <?php elseif (empty($available_tables)): ?>
-        <?php // Vietnamese: cau chu chinh xac lay tu docs/design-process.md §7 (empty state cua tim kiem) ?>
-        <div class="alert alert-warning">
-            No tables are available for this date, time slot, and party size. Try a different date, time, or slot.
+        <?php // Vietnamese: cau chu chinh xac lay tu docs/design-process.md §7 (empty state cua tim kiem), hoa tiet hoa sen thay cho emoji de dong nhat nhan dien. ?>
+        <div class="gl-empty-state">
+            <div class="gl-empty-icon"><?= svg_lotus_motif() ?></div>
+            <p class="mb-0">No tables are available for this date, time slot, and party size. Try a different date, time, or slot.</p>
         </div>
     <?php else: ?>
         <form method="post" action="<?= BASE_URL ?>/customer/book.php" class="js-disable-on-submit" novalidate>
@@ -173,11 +177,12 @@ require __DIR__ . '/../includes/header.php';
             <input type="hidden" name="time_slot_id" value="<?= e($search['time_slot_id']) ?>">
 
             <h2 class="h5 mb-3">Available tables</h2>
-            <?php // Vietnamese: sap xep san theo capacity tang dan tu get_available_tables() - ban vua du cho hien truoc tien. ?>
+            <?php // Vietnamese: sap xep san theo capacity tang dan tu get_available_tables() - ban vua du cho hien truoc tien. The dung .gl-table-card (bo len khi hover, vien mau accent + dau check khi duoc chon, xuat hien lan luot theo --gl-row-i) thay cho .card Bootstrap mac dinh. ?>
             <div class="row g-3 mb-4">
                 <?php foreach ($available_tables as $i => $table): ?>
                     <div class="col-sm-6 col-lg-4">
-                        <label class="card h-100 p-3" style="cursor: pointer;">
+                        <label class="gl-table-card d-block" style="--gl-row-i: <?= e((string) $i) ?>;">
+                            <span class="gl-table-card-check"><?= svg_icon_check() ?></span>
                             <div class="form-check">
                                 <input
                                     class="form-check-input" type="radio" name="table_id"

@@ -4,7 +4,19 @@
  * KHÔNG thay thế cho validate phía server (bắt buộc theo yêu cầu bảo mật).
  */
 
+// Vietnamese: gan class nay NGAY (khong doi DOMContentLoaded) de CSS chi an
+// noi dung ".gl-reveal" (scroll-reveal) khi THAT SU co JS chay - neu JS bi
+// tat, class nay khong bao gio xuat hien nen CSS khong an gi ca, noi dung
+// hien san = dung yeu cau "visible by default when JS is off".
+document.documentElement.classList.add('js-enabled');
+
 document.addEventListener('DOMContentLoaded', function () {
+    // Vietnamese: doc mot lan, dung lai o nhieu hieu ung ben duoi thay vi goi
+    // matchMedia() nhieu lan - true khi nguoi dung da bat "Reduce motion" o
+    // he dieu hanh/trinh duyet (ly do tien dinh/vestibular, xem
+    // docs/design-process.md muc "Polish pass").
+    var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     // Vietnamese: vo hieu hoa nut submit NGAY khi bam (truoc khi cho phan hoi
     // mang), tranh khach bam hai lan lien tiep tao ra hai request gan nhu
     // trung nhau (vd bam "Confirm Reservation" hai lan). Day CHI la bien phap
@@ -50,4 +62,183 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     });
+
+    // =========================================================================
+    // Toast (thong bao flash) - tu dong tat sau 4s kem thanh tien trinh cho
+    // success/info/warning; loi (danger) o lai cho den khi nguoi dung tu dong
+    // (bam nut dong). Ban than viec luu/lay flash van la session PHP nhu cu
+    // (includes/helpers.php) - day CHI la lop trinh bay moi.
+    // =========================================================================
+    document.querySelectorAll('.gl-toast').forEach(function (toast) {
+        var isError = toast.classList.contains('gl-toast-danger');
+        var closeBtn = toast.querySelector('.gl-toast-close');
+        var progress = toast.querySelector('.gl-toast-progress');
+        var dismissTimer = null;
+
+        function dismiss() {
+            if (dismissTimer) {
+                clearTimeout(dismissTimer);
+            }
+            if (prefersReducedMotion) {
+                toast.remove();
+                return;
+            }
+            toast.classList.add('is-leaving');
+            toast.addEventListener('animationend', function () {
+                toast.remove();
+            }, { once: true });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', dismiss);
+        }
+
+        if (!isError) {
+            if (progress) {
+                progress.classList.add('is-active');
+            }
+            // Vietnamese: dung setTimeout doc lap voi hoat hinh CSS cua thanh
+            // tien trinh - du prefers-reduced-motion lam hoat hinh CSS chay
+            // gan-tuc-thi, toast van thuc su bi go sau ~4s dung nhu thiet ke,
+            // khong phu thuoc animationend co ban hay khong.
+            dismissTimer = setTimeout(dismiss, 4000);
+        }
+    });
+
+    // =========================================================================
+    // Highlight mot lan cho dong dat cho vua tao (tu book.php) hoac vua huy
+    // (tu my-reservations.php) sau khi redirect PRG - server gan
+    // ?highlight=<id> vao URL dich, JS o day tim dung <tr data-reservation-id>
+    // roi xoa tham so khoi URL (history.replaceState) de F5 khong highlight
+    // lai. Duoi reduced-motion, CSS da ep animation gan nhu tuc thi (0.01ms)
+    // nen hieu ung tu nhien "tat" ma khong can nhanh rieng o day.
+    // =========================================================================
+    (function highlightRowFromQueryString() {
+        var params = new URLSearchParams(window.location.search);
+        var highlightId = params.get('highlight');
+        if (!highlightId) {
+            return;
+        }
+        var row = document.querySelector('tr[data-reservation-id="' + CSS.escape(highlightId) + '"]');
+        if (row) {
+            row.classList.add('gl-row-highlight');
+        }
+        params.delete('highlight');
+        var newSearch = params.toString();
+        var newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '') + window.location.hash;
+        window.history.replaceState(null, '', newUrl);
+    })();
+
+    // =========================================================================
+    // The chon ban tren book.php - dong bo class .is-selected voi radio dang
+    // duoc chon. CSS :has() da tu xu ly viec nay o trinh duyet ho tro, nhung
+    // van gan them class bang JS de nhat quan (vd cho cac thao tac JS khac co
+    // the doc trang thai qua class thay vi phai tu :has() lai) va lam phuong
+    // an du phong ro rang.
+    // =========================================================================
+    document.querySelectorAll('.gl-table-card').forEach(function (card) {
+        var input = card.querySelector('input[type="radio"]');
+        if (!input) {
+            return;
+        }
+        input.addEventListener('change', function () {
+            document.querySelectorAll('.gl-table-card').forEach(function (c) {
+                c.classList.remove('is-selected');
+            });
+            if (input.checked) {
+                card.classList.add('is-selected');
+            }
+        });
+        if (input.checked) {
+            card.classList.add('is-selected');
+        }
+    });
+
+    // =========================================================================
+    // Dem so tang dan (count-up) cho 4 o tile tren admin/dashboard.php - CHI
+    // trang tri, gia tri cuoi cung LUON la gia tri PHP da render san trong
+    // text content (neu JS tat hoac prefers-reduced-motion, so hien nguyen,
+    // dung, khong can hoat hinh moi doc duoc).
+    // =========================================================================
+    if (!prefersReducedMotion) {
+        document.querySelectorAll('[data-count-target]').forEach(function (el) {
+            var target = parseFloat(el.dataset.countTarget);
+            if (isNaN(target)) {
+                return;
+            }
+            var suffix = el.dataset.countSuffix || '';
+            var duration = 650;
+            var startTime = null;
+
+            function step(timestamp) {
+                if (startTime === null) {
+                    startTime = timestamp;
+                }
+                var progress = Math.min((timestamp - startTime) / duration, 1);
+                // easeOutCubic - bat dau nhanh, ket thuc muot, khong giat.
+                var eased = 1 - Math.pow(1 - progress, 3);
+                var current = Math.round(target * eased);
+                el.textContent = current + suffix;
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    el.textContent = target + suffix;
+                }
+            }
+            window.requestAnimationFrame(step);
+        });
+    }
+
+    // =========================================================================
+    // Bieu do cot (reports.php) - cac thanh duoc PHP render san voi width:0%
+    // va data-target-width; sau khi trang ve xong, doi sang gia tri that de
+    // transition CSS (public/css/style.css .gl-bar-fill) tao hieu ung "lon
+    // dan tu 0". Dung requestAnimationFrame long nhau (double-rAF) de dam bao
+    // trinh duyet da ve xong khung hinh dau (width:0%) truoc khi doi sang gia
+    // tri moi - neu doi ngay trong cung 1 frame, trinh duyet co the gop hai
+    // thay doi lam mot va transition khong chay.
+    // =========================================================================
+    var bars = document.querySelectorAll('.gl-bar-fill[data-target-width]');
+    if (bars.length > 0) {
+        window.requestAnimationFrame(function () {
+            window.requestAnimationFrame(function () {
+                bars.forEach(function (bar) {
+                    bar.style.width = bar.dataset.targetWidth + '%';
+                });
+            });
+        });
+    }
+
+    // =========================================================================
+    // Scroll-reveal cho noi dung duoi man hinh dau (index.php) - IntersectionObserver
+    // chi THEM class hien (.is-visible), khong bao gio an noi dung neu trinh
+    // duyet khong ho tro API nay (kiem tra 'IntersectionObserver' in window).
+    // CSS chi an noi dung khi <html> co class "js-enabled" (luon co vi dong
+    // dau file gan class do ngay lap tuc) VA phan tu chua nhan ".is-visible" -
+    // neu ca doan script nay khong chay duoc vi ly do gi, noi dung se ket
+    // thuc o trang thai "an" - vi vay bat buoc kiem tra ho tro truoc khi dung.
+    // =========================================================================
+    var revealTargets = document.querySelectorAll('.gl-reveal');
+    if (revealTargets.length > 0) {
+        if ('IntersectionObserver' in window) {
+            var revealObserver = new IntersectionObserver(function (entries, observer) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+            revealTargets.forEach(function (el) {
+                revealObserver.observe(el);
+            });
+        } else {
+            // Vietnamese: trinh duyet qua cu khong co IntersectionObserver -
+            // hien het ngay, khong de noi dung bi ket o trang thai an vinh vien.
+            revealTargets.forEach(function (el) {
+                el.classList.add('is-visible');
+            });
+        }
+    }
 });

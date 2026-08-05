@@ -10,6 +10,7 @@
  */
 
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/icons.php';
 
 $current_user  = current_user();
 $active_title  = isset($page_title) ? $page_title . ' - Golden Lotus Restaurant' : 'Golden Lotus Restaurant';
@@ -57,13 +58,25 @@ $active_title  = isset($page_title) ? $page_title . ' - Golden Lotus Restaurant'
     </div>
 </nav>
 
-<div class="container mt-3">
-    <?php foreach (get_flashes() as $flash): ?>
-        <div class="alert alert-<?= e($flash['type']) ?> alert-dismissible fade show" role="alert">
-            <?= e($flash['message']) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endforeach; ?>
-</div>
+<?php
+// Vietnamese: doi tu alert tinh (o dau trang) sang "toast" truot vao goc
+// tren-phai (Phase "Polish pass") - co che luu/lay flash BEN DUOI khong doi
+// gi ca (van la $_SESSION['flash'] qua get_flashes(), Phase P4b), day chi la
+// lop trinh bay moi. public/js/main.js xu ly tu dong tat (success/info/
+// warning sau 4s kem thanh tien trinh) va nut dong thu cong (danger o lai
+// den khi nguoi dung tu bam) - xem CSS .gl-toast* trong public/css/style.css.
+$flashes = get_flashes();
+?>
+<?php if (!empty($flashes)): ?>
+    <div class="gl-toast-region" aria-live="polite" aria-atomic="true">
+        <?php foreach ($flashes as $flash): ?>
+            <div class="gl-toast gl-toast-<?= e($flash['type']) ?>" role="status">
+                <div class="gl-toast-body"><?= e($flash['message']) ?></div>
+                <button type="button" class="gl-toast-close" aria-label="Dismiss notification">&times;</button>
+                <div class="gl-toast-progress"></div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
 
 <main class="container my-4">

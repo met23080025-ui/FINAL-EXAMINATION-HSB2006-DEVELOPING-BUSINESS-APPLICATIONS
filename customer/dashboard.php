@@ -64,7 +64,7 @@ require __DIR__ . '/../includes/header.php';
     <a class="btn btn-gl-primary" href="<?= BASE_URL ?>/customer/book.php">+ Book a Table</a>
 </div>
 
-<div class="card mb-4">
+<div class="card gl-next-reservation-card mb-4">
     <div class="card-body">
         <h2 class="h5 mb-3">Your next reservation</h2>
         <?php if ($next_reservation === false): ?>
@@ -75,7 +75,7 @@ require __DIR__ . '/../includes/header.php';
             <div class="d-flex flex-wrap align-items-center gap-4">
                 <div>
                     <div class="text-muted small">Date &amp; time</div>
-                    <div class="fs-4 fw-bold" style="font-family: var(--gl-font-heading);">
+                    <div class="gl-next-value">
                         <?= e($next_reservation['reservation_date']) ?>
                         &middot;
                         <?= e(substr($next_reservation['start_time'], 0, 5) . '-' . substr($next_reservation['end_time'], 0, 5)) ?>
@@ -117,7 +117,7 @@ require __DIR__ . '/../includes/header.php';
 <?php if (empty($recent_history)): ?>
     <?php // Vietnamese: cau chu chinh xac lay tu docs/design-process.md §7 ?>
     <div class="gl-empty-state">
-        <div class="gl-empty-icon">🍽️</div>
+        <div class="gl-empty-icon"><?= svg_lotus_motif() ?></div>
         <p class="mb-2">You have no reservations yet.</p>
         <a href="<?= BASE_URL ?>/customer/book.php" class="btn btn-outline-secondary btn-sm">Book a Table to get started</a>
     </div>

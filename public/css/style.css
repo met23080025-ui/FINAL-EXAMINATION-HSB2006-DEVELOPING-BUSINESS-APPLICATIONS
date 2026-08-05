@@ -43,6 +43,63 @@
   --gl-space-4: 1.5rem;
   --gl-space-5: 2rem;
   --gl-space-6: 3rem;
+
+  /*
+   * ==========================================================================
+   * "Polish pass" tokens (UI modernisation) — xem docs/design-process.md
+   * muc "Polish pass" cho rationale day du (vi sao tung gia tri duoc chon,
+   * kiem chung tuong phan...). Tat ca deu xay tren --gl-primary/--gl-accent
+   * co san - khong them mau moi ngoai bang mau da khoa o §5.
+   * ==========================================================================
+   */
+
+  /* Thang do bong (shadow scale) - mem, nhieu lop, khong bao gio gat */
+  --gl-shadow-1: 0 1px 2px rgba(31, 42, 36, 0.06), 0 1px 1px rgba(31, 42, 36, 0.04);
+  --gl-shadow-2: 0 8px 20px rgba(31, 42, 36, 0.10), 0 2px 6px rgba(31, 42, 36, 0.06);
+  --gl-shadow-3: 0 20px 44px rgba(31, 42, 36, 0.16), 0 6px 12px rgba(31, 42, 36, 0.08);
+
+  /* Thang do bo tron (radius scale) */
+  --gl-radius-sm: 0.375rem;
+  --gl-radius-md: 0.75rem;
+  --gl-radius-lg: 1.25rem;
+
+  /* Token chuyen tiep (transition) - dung thong nhat thay vi so tuy y ram roi tung noi */
+  --gl-t-fast: 150ms ease;
+  --gl-t-base: 250ms ease;
+
+  /*
+   * Cong thuc gradient (dat ten, dung lai o nhieu noi thay vi khai bao rieng
+   * tung trang) - deu pha tu chinh --gl-primary/--gl-primary-dark/--gl-accent.
+   * gl-grad-hero: dung cho khoi hero trang chu - lop radial "hao quang" vang
+   * nhat o goc tren-phai + lop linear xanh dam lam nen, chu de tren gradient
+   * nay luon nam LECH VE GOC KHONG CO hao quang (xem kiem chung tuong phan
+   * trong docs/design-process.md).
+   */
+  --gl-grad-hero: radial-gradient(ellipse 60% 55% at 88% 8%, rgba(201, 162, 39, 0.28), transparent 60%),
+                  linear-gradient(150deg, #0e7048 0%, #0b5d3b 45%, #073c26 100%);
+  /* gl-grad-panel: panel gradient dung cho cot trang tri cua trang dang nhap/dang ky */
+  --gl-grad-panel: linear-gradient(165deg, #0e7048 0%, #0b5d3b 50%, #073c26 100%);
+  /* gl-grad-card: lop phu nhe tren nen trang, dung cho the/tile can mot chut chieu sau khong pha vo nen trang */
+  --gl-grad-card: linear-gradient(160deg, rgba(201, 162, 39, 0.09), rgba(11, 93, 59, 0.03) 60%);
+}
+
+/*
+ * Nguoi dung bat "Reduce motion" (he dieu hanh/trinh duyet) thuong vi ly do
+ * tien dinh (vestibular) - hoat hinh chuyen dong/thu phong co the gay chong
+ * mat, buon non. Khoi nay tat TOAN BO hoat hinh/chuyen tiep khong thiet yeu
+ * bang cach ep thoi luong ve gan nhu 0 cho MOI phan tu, thay vi tat tung hieu
+ * ung rieng le (de sot la con nguyen nhan gay kho chiu) - xem
+ * docs/design-process.md muc "Polish pass" cho quyet dinh nay.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 body {
@@ -210,23 +267,38 @@ a:hover {
 }
 
 .gl-tile {
+  position: relative;
   background-color: #fff;
-  border-radius: 0.75rem;
+  /* Lop phu gradient rat nhat mang mau rieng cua tung tile (--gl-tile-accent) -
+     color-mix() duoc ho tro tren moi trinh duyet hien dai (Chrome/Firefox/Edge
+     ban on dinh hien tai, dat NFR-04) nen khong can bien mau thu cong tung tile. */
+  background-image: linear-gradient(160deg, color-mix(in srgb, var(--gl-tile-accent, var(--gl-primary)) 10%, white), white 65%);
+  border-radius: var(--gl-radius-md);
   border: 1px solid var(--gl-accent-soft);
   border-top: 4px solid var(--gl-tile-accent, var(--gl-primary));
   padding: var(--gl-space-4);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: var(--gl-shadow-1);
+  transition: transform var(--gl-t-base), box-shadow var(--gl-t-base);
 }
 
 .gl-tile:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0.5rem 1rem rgba(31, 42, 36, 0.08);
+  transform: translateY(-3px);
+  box-shadow: var(--gl-shadow-2);
 }
 
 .gl-tile-icon {
-  font-size: 1.5rem;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
   margin-bottom: var(--gl-space-2);
+  color: var(--gl-tile-accent, var(--gl-primary));
+}
+
+.gl-tile-icon-svg {
+  width: 100%;
+  height: 100%;
 }
 
 .gl-tile-value {
@@ -273,10 +345,13 @@ a:hover {
 }
 
 .gl-bar-fill {
-  background-color: var(--gl-primary);
+  background-image: linear-gradient(90deg, var(--gl-primary), var(--gl-primary-dark));
   height: 100%;
   border-radius: 0.25rem 0 0 0.25rem;
-  transition: width 0.3s ease;
+  /* JS (reports.php) dat width ban dau = 0% roi doi sang gia tri that ngay
+     sau khi ve trang xong, de chinh transition nay tao hieu ung "cot bieu do
+     lon dan tu 0" - xem public/js/main.js, ham animateReportBars(). */
+  transition: width 900ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .gl-bar-value {
@@ -284,30 +359,564 @@ a:hover {
   font-variant-numeric: tabular-nums;
 }
 
-/* Trang thai rong (empty state) - "trong deliberate, khong giong bi hong" */
+.gl-bar-row {
+  opacity: 0;
+  animation: gl-fade-in-up var(--gl-t-base) ease forwards;
+  animation-delay: calc(var(--gl-row-i, 0) * 70ms + 300ms);
+}
+
+/* Trang thai rong (empty state) - "trong deliberate, khong giong bi hong".
+   Icon ben trong gio la hoa tiet hoa sen (svg_lotus_motif()) thay vi emoji -
+   dong nhat nhan dien thuong hieu tren moi trang thay vi moi trang mot emoji
+   khac nhau (xem docs/design-process.md muc "Polish pass"). */
 .gl-empty-state {
+  position: relative;
   text-align: center;
   padding: var(--gl-space-6) var(--gl-space-4);
   background-color: #fff;
+  background-image: var(--gl-grad-card);
   border: 1px dashed var(--gl-accent-soft);
-  border-radius: 0.75rem;
+  border-radius: var(--gl-radius-lg);
 }
 
 .gl-empty-state .gl-empty-icon {
-  font-size: 2.5rem;
-  margin-bottom: var(--gl-space-2);
-  opacity: 0.6;
+  width: 3.25rem;
+  margin: 0 auto var(--gl-space-3);
+  color: var(--gl-primary);
+  opacity: 0.5;
 }
 
-/* Cung co focus-visible cho cac phan tu tuong tac chua duoc Bootstrap lam ro san - nguoi dung ban phim phai luon thay minh dang o dau */
-.gl-sort-link:focus-visible,
-.gl-tile:focus-visible {
+/*
+ * Focus-visible THONG NHAT cho MOI phan tu tuong tac (khong chi rieng
+ * gl-sort-link/gl-tile nhu truoc) - nguoi dung ban phim phai luon thay minh
+ * dang o dau, tren moi trang, khong chi vai noi le te.
+ *
+ * QUYET DINH THIET KE (2 LOP) - vi sao KHONG dung thang mot outline mau
+ * --gl-accent: §5.2 da chung minh --gl-accent (#C9A227) tren --gl-bg
+ * (#FAF8F2) chi dat 2.28:1 - fail ca nguong 3:1 ma WCAG 1.4.11 yeu cau cho
+ * THANH PHAN KHONG PHAI CHU (non-text UI component, bao gom focus indicator),
+ * chu khong rieng nguong 4.5:1 cua van ban. Dung thang --gl-accent lam mau
+ * outline se khong du ro cho nguoi dung thi luc kem. Giai phap: outline DAC
+ * (solid) mau --gl-primary lam lop chinh - mau nay da duoc chung minh dat
+ * 7.94:1 tren moi nen trong he thong (§5.2) - CONG THEM mot lop "hao quang"
+ * (box-shadow) mau vang gold ban trong suot lam lop trang tri, de mat thuong
+ * van nhan ra day la "focus mang tinh accent" nhu yeu cau, ma khong hy sinh
+ * do ro net cua chinh vien outline.
+ */
+:focus-visible {
   outline: 2px solid var(--gl-primary);
   outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgba(201, 162, 39, 0.32);
+  border-radius: var(--gl-radius-sm);
 }
 
 /* Chuyen tiep (transition) nhe cho card/button - tinh te, khong gay xao nhang */
 .card,
 .btn {
-  transition: box-shadow 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+  transition: box-shadow var(--gl-t-base), transform var(--gl-t-base), background-color var(--gl-t-base), border-color var(--gl-t-base);
+}
+
+.card {
+  border-radius: var(--gl-radius-md);
+  box-shadow: var(--gl-shadow-1);
+  border-color: rgba(201, 162, 39, 0.25);
+}
+
+.btn {
+  border-radius: var(--gl-radius-sm);
+  font-weight: 600;
+}
+
+.btn-gl-primary {
+  box-shadow: var(--gl-shadow-1);
+}
+
+.btn-gl-primary:hover {
+  box-shadow: var(--gl-shadow-2);
+  transform: translateY(-1px);
+}
+
+/* Bo tron & vien nhe thong nhat cho form control - dong bo voi radius scale thay vi mac dinh Bootstrap */
+.form-control,
+.form-select {
+  border-radius: var(--gl-radius-sm);
+  transition: box-shadow var(--gl-t-fast), border-color var(--gl-t-fast);
+}
+
+/*
+ * Hieu ung "phat sang" nhe mau vang gold quanh o nhap lieu khi focus - day
+ * la box-shadow TRANG TRI di KEM voi (khong thay the) outline chinh mau
+ * --gl-primary o quy tac :focus-visible phia tren, nen khong vi pham nguong
+ * tuong phan cho focus indicator da giai thich o do.
+ */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--gl-primary);
+  box-shadow: 0 0 0 4px rgba(201, 162, 39, 0.22);
+}
+
+.invalid-feedback {
+  animation: gl-fade-in-down var(--gl-t-base) ease both;
+}
+
+/*
+ * ============================================================================
+ * UI modernisation pass ("Polish pass") — hoa tiet SVG, gradient, chuyen dong,
+ * toast, split layout dang nhap, the ket qua ban, tile dem so... Tat ca CHI la
+ * lop trinh bay (presentation) tren cung du lieu/logic da co tu P4-P7 - khong
+ * trang nao trong phan nay thay doi luong nghiep vu. Xem rationale day du
+ * (kiem chung tuong phan, quyet dinh reduced-motion, ly do chon hoa tiet hoa
+ * sen...) trong docs/design-process.md muc "Polish pass".
+ * ============================================================================
+ */
+
+/* ---- Keyframes dung chung ---- */
+
+@keyframes gl-fade-in-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gl-fade-in-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gl-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes gl-toast-in {
+  from { opacity: 0; transform: translate(16px, -8px); }
+  to   { opacity: 1; transform: translate(0, 0); }
+}
+
+@keyframes gl-toast-progress {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+@keyframes gl-row-flash {
+  0%   { background-color: var(--gl-accent-soft); }
+  100% { background-color: transparent; }
+}
+
+/* ---- Hoa tiet hoa sen (lotus motif) - dung trang tri o hero/panel dang nhap/empty state/footer ---- */
+
+.gl-lotus-motif {
+  display: block;
+  color: currentColor;
+}
+
+/* ---- Toast (thong bao flash dang truot vao tu goc tren-phai) ---- */
+
+.gl-toast-region {
+  position: fixed;
+  top: var(--gl-space-4);
+  right: var(--gl-space-4);
+  z-index: 1080;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gl-space-2);
+  width: min(24rem, calc(100vw - 2 * var(--gl-space-4)));
+  pointer-events: none;
+}
+
+.gl-toast {
+  position: relative;
+  overflow: hidden;
+  pointer-events: auto;
+  background-color: #fff;
+  border-radius: var(--gl-radius-md);
+  box-shadow: var(--gl-shadow-3);
+  border-left: 5px solid var(--gl-primary);
+  padding: var(--gl-space-3) var(--gl-space-4);
+  padding-right: 2.5rem;
+  animation: gl-toast-in var(--gl-t-base) ease both;
+}
+
+.gl-toast-success { border-left-color: #198754; }
+.gl-toast-danger   { border-left-color: #dc3545; }
+.gl-toast-warning  { border-left-color: #c9a227; }
+.gl-toast-info     { border-left-color: #0dcaf0; }
+
+.gl-toast-body {
+  font-size: var(--gl-fs-body);
+  color: var(--gl-text);
+  padding-right: var(--gl-space-2);
+}
+
+.gl-toast-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  border: 0;
+  background: transparent;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--gl-text);
+  opacity: 0.5;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.gl-toast-close:hover {
+  opacity: 1;
+}
+
+.gl-toast-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background-color: var(--gl-accent);
+  opacity: 0.6;
+}
+
+/* JS them class nay cho toast tu-dong-tat (success/info/warning) de chay thanh tien trinh; loi (danger) khong co class nay nen thanh tien trinh khong bao gio xuat hien - dung dac ta "errors persist until dismissed". */
+.gl-toast-progress.is-active {
+  animation: gl-toast-progress 4s linear forwards;
+}
+
+.gl-toast.is-leaving {
+  animation: gl-fade-in-down var(--gl-t-base) ease reverse both;
+}
+
+/* ---- Hero trang chu ---- */
+
+.gl-hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background-image: var(--gl-grad-hero);
+  color: #fff;
+  border-radius: var(--gl-radius-lg);
+  padding: var(--gl-space-6) var(--gl-space-4);
+  box-shadow: var(--gl-shadow-3);
+}
+
+/* Hoa tiet trang tri goc - dat LECH VE PHIA KHONG co "hao quang" vang cua
+   gradient (goc tren-phai) va o phia SAU noi dung (z-index thap), opacity
+   thap de khong bao gio canh tranh voi chu - xem kiem chung tuong phan trong
+   docs/design-process.md. */
+.gl-hero-motif {
+  position: absolute;
+  top: -10%;
+  right: -6%;
+  width: min(22rem, 60%);
+  color: #fff;
+  opacity: 0.10;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.gl-hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 40rem;
+}
+
+.gl-hero h1 {
+  color: #fff;
+}
+
+.gl-hero .gl-hero-enter {
+  opacity: 0;
+  animation: gl-fade-in-up 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.gl-hero .gl-hero-enter-delay-1 { animation-delay: 120ms; }
+.gl-hero .gl-hero-enter-delay-2 { animation-delay: 260ms; }
+
+.gl-hero .btn-light {
+  border-radius: var(--gl-radius-sm);
+  font-weight: 700;
+  box-shadow: var(--gl-shadow-2);
+}
+
+.gl-hero .btn-light:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--gl-shadow-3);
+}
+
+/* ---- The khu vuc tren trang chu ---- */
+
+.gl-area-card {
+  position: relative;
+  height: 100%;
+  padding: var(--gl-space-4);
+  background-color: #fff;
+  background-image: var(--gl-grad-card);
+  border: 1px solid var(--gl-accent-soft);
+  border-radius: var(--gl-radius-md);
+  box-shadow: var(--gl-shadow-1);
+  transition: transform var(--gl-t-base), box-shadow var(--gl-t-base);
+}
+
+.gl-area-card:hover,
+.gl-area-card:focus-within {
+  transform: translateY(-4px);
+  box-shadow: var(--gl-shadow-2);
+}
+
+.gl-area-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-bottom: var(--gl-space-3);
+  color: var(--gl-primary);
+  transition: color var(--gl-t-base);
+}
+
+.gl-area-card:hover .gl-area-card-icon {
+  color: var(--gl-accent);
+}
+
+.gl-area-card-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- Scroll-reveal (IntersectionObserver) - AN CHI KHI co class .js-enabled tren <html>,
+   nen phai co JS moi bi an; khong co JS thi noi dung hien san = dung yeu cau
+   "visible by default when JS is off". ---- */
+
+html.js-enabled .gl-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 600ms ease, transform 600ms ease;
+}
+
+html.js-enabled .gl-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---- Split layout trang dang nhap / dang ky ---- */
+
+.gl-auth-split {
+  border-radius: var(--gl-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--gl-shadow-3);
+}
+
+.gl-auth-form-pane {
+  background-color: #fff;
+  padding: var(--gl-space-5);
+}
+
+.gl-auth-panel {
+  position: relative;
+  overflow: hidden;
+  background-image: var(--gl-grad-panel);
+  color: #fff;
+  padding: var(--gl-space-5);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100%;
+}
+
+.gl-auth-panel-motif {
+  position: absolute;
+  bottom: -8%;
+  left: -10%;
+  width: 70%;
+  color: #fff;
+  opacity: 0.12;
+  z-index: 0;
+}
+
+.gl-auth-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.gl-auth-panel h2 {
+  color: #fff;
+  font-size: var(--gl-fs-h3);
+}
+
+/* ---- The ket qua ban tren book.php ---- */
+
+.gl-table-card {
+  position: relative;
+  cursor: pointer;
+  height: 100%;
+  padding: var(--gl-space-3) var(--gl-space-4);
+  background-color: #fff;
+  border: 2px solid var(--gl-accent-soft);
+  border-radius: var(--gl-radius-md);
+  box-shadow: var(--gl-shadow-1);
+  transition: transform var(--gl-t-base), box-shadow var(--gl-t-base), border-color var(--gl-t-base);
+  opacity: 0;
+  animation: gl-fade-in-up var(--gl-t-base) ease forwards;
+  animation-delay: calc(var(--gl-row-i, 0) * 60ms);
+}
+
+.gl-table-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--gl-shadow-2);
+}
+
+/* Trang thai "da chon" - dung :has() (ho tro tren cac trinh duyet on dinh
+   hien tai theo NFR-04) de doi kieu the ngay khi input radio ben trong duoc
+   chon, khong can JS; public/js/main.js van them class .is-selected song
+   song lam phuong an du phong/nhat quan cho cac thao tac JS khac (vd doc
+   trang thai de cuon toi). */
+.gl-table-card:has(input:checked),
+.gl-table-card.is-selected {
+  border-color: var(--gl-accent);
+  box-shadow: var(--gl-shadow-2);
+  background-image: var(--gl-grad-card);
+}
+
+.gl-table-card-check {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--gl-primary);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity var(--gl-t-fast), transform var(--gl-t-fast);
+}
+
+.gl-table-card:has(input:checked) .gl-table-card-check,
+.gl-table-card.is-selected .gl-table-card-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ---- Badge trang thai dang "vien thuoc" (pill), khong doi mau (khoa o §5.1) ---- */
+
+.badge {
+  border-radius: 999px;
+  padding: 0.4em 0.85em;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* ---- Highlight mot lan cho dong vua tao/huy sau redirect PRG ---- */
+
+.gl-row-highlight {
+  animation: gl-row-flash 2s ease-out both;
+}
+
+/* ---- Bang admin: dong pending co vien trai mau amber, tieu de dinh (sticky) ---- */
+
+.table-responsive {
+  border-radius: var(--gl-radius-md);
+  overflow: auto;
+}
+
+.table-responsive .table thead th {
+  position: sticky;
+  top: 0;
+  background-color: #fff;
+  z-index: 1;
+  box-shadow: 0 1px 0 var(--gl-accent-soft);
+}
+
+tr.gl-row-pending {
+  border-left: 4px solid #ffc107;
+}
+
+.table tbody tr {
+  transition: background-color var(--gl-t-fast);
+}
+
+.table-hover tbody tr:hover,
+.table tbody tr:hover {
+  background-color: rgba(201, 162, 39, 0.06);
+}
+
+/* ---- Mui ten sap xep SVG (thay Unicode ▲▼) ---- */
+
+.gl-sort-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.gl-sort-link svg {
+  width: 0.7rem;
+  height: 0.7rem;
+}
+
+/* ---- Modal CRUD: vao/ra bang scale+fade thay vi truot mac dinh cua Bootstrap ---- */
+
+.modal.fade .modal-dialog {
+  transform: scale(0.94) translateY(-12px);
+  transition: transform var(--gl-t-base), opacity var(--gl-t-base);
+  opacity: 0;
+}
+
+.modal.show .modal-dialog {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+.modal-content {
+  border-radius: var(--gl-radius-lg);
+  border: none;
+  box-shadow: var(--gl-shadow-3);
+}
+
+/* ---- Tile dashboard: gia tri dem so (count-up) - JS doi noi dung text node, CSS chi can tabular-nums de con so khong "nhay" do bien do rong ky tu ---- */
+
+.gl-tile-value {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- The "dat cho sap toi" tren dashboard khach hang ---- */
+
+.gl-next-reservation-card {
+  position: relative;
+  overflow: hidden;
+  background-color: #fff;
+  background-image: var(--gl-grad-card);
+  border-radius: var(--gl-radius-lg);
+  border-left: 5px solid var(--gl-accent);
+  box-shadow: var(--gl-shadow-2);
+}
+
+.gl-next-reservation-card .gl-next-value {
+  font-family: var(--gl-font-heading);
+  font-size: var(--gl-fs-h3);
+  font-weight: 700;
+  color: var(--gl-primary);
+}
+
+/* ---- Footer: hoa tiet hoa sen nho, kin dao ---- */
+
+.gl-footer-motif {
+  width: 2.5rem;
+  margin: 0 auto var(--gl-space-2);
+  color: var(--gl-primary);
+  opacity: 0.35;
+}
+
+/* ---- Density/typography sweep chung ---- */
+
+.text-muted,
+.form-text {
+  color: #5b6960 !important; /* xam-xanh dam hon mac dinh Bootstrap, van dat AA tren --gl-bg va #fff */
+}
+
+.card-body {
+  padding: var(--gl-space-4);
+}
+
+.card-header {
+  background-color: rgba(201, 162, 39, 0.08);
+  border-bottom: 1px solid var(--gl-accent-soft);
+  font-family: var(--gl-font-heading);
+  font-weight: 600;
 }

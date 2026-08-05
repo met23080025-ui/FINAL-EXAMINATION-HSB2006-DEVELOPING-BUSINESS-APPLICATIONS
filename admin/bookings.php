@@ -230,7 +230,7 @@ require __DIR__ . '/../includes/header.php';
 
 <?php if (empty($reservations)): ?>
     <div class="gl-empty-state">
-        <div class="gl-empty-icon">📋</div>
+        <div class="gl-empty-icon"><?= svg_lotus_motif() ?></div>
         <?php if ($has_active_filters): ?>
             <?php // Vietnamese: cau chu chinh xac lay tu docs/design-process.md §7 ?>
             <p class="mb-2">No bookings match these filters. Try widening the date range or clearing a filter.</p>
@@ -262,7 +262,7 @@ require __DIR__ . '/../includes/header.php';
                     $slot_end   = new DateTimeImmutable($r['reservation_date'] . ' ' . $r['end_time']);
                     $has_passed = $slot_end <= $now;
                     ?>
-                    <tr>
+                    <tr class="<?= $r['status'] === 'pending' ? 'gl-row-pending' : '' ?>">
                         <td><?= e($r['customer_name']) ?><div class="text-muted small"><?= e($r['customer_email']) ?></div></td>
                         <td><?= e($r['table_code']) ?></td>
                         <td><?= e(format_area_label($r['area'])) ?></td>

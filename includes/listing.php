@@ -111,7 +111,12 @@ function sort_header_html(string $script_path, array $current_sort, string $key,
     $qs        = listing_query_string(['sort' => $key, 'dir' => $next_dir, 'page' => null]);
     $indicator = '';
     if ($current_sort['key'] === $key) {
-        $indicator = $current_sort['dir'] === 'asc' ? ' <span aria-hidden="true">&#9650;</span>' : ' <span aria-hidden="true">&#9660;</span>';
+        // Vietnamese: mui ten SVG tu ve (Phase "Polish pass") thay cho ky tu
+        // Unicode ▲▼ truoc day - net mong, dong bo voi phong cach line-art
+        // cua toan bo bo icon (includes/icons.php), tu xoay 180 do bang CSS
+        // thay vi ve hai duong path rieng.
+        $rotate    = $current_sort['dir'] === 'asc' ? '' : ' style="transform: rotate(180deg);"';
+        $indicator = ' <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"' . $rotate . '><path d="M2 6.5L5 3.5L8 6.5"/></svg>';
     }
     $sr = $current_sort['key'] === $key ? ' <span class="visually-hidden">(sorted ' . ($current_sort['dir'] === 'asc' ? 'ascending' : 'descending') . ')</span>' : '';
 
