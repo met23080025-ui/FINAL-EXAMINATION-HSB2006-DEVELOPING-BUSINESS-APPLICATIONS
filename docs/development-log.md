@@ -409,6 +409,111 @@ because the project owner made a further real booking (id 69, dated
 AI-testing residue) before concluding it was legitimate rather than
 assuming so.
 
+## Phase P7.8 — Self-hosted webfonts + UI copy punctuation sweep
+**Commit:** `34a539f` (2026-08-05) — *style: self-hosted Playfair Display + Be Vietnam Pro, copy punctuation sweep*
+
+**Fonts:** `public/fonts/` (found untracked at the end of Phase P7.7,
+explicitly left alone at the time — see that phase's summary) was reused
+as the basis for self-hosting Playfair Display (headings) and Be Vietnam
+Pro (body). Reorganised from the raw Google Fonts download (18+ files
+across both families, including every weight, italics, and — for
+Playfair — both variable and static builds) down to exactly what the type
+scale uses: `public/fonts/playfair-display/` and `public/fonts/be-vietnam-pro/`,
+each with `Regular.ttf`/`SemiBold.ttf`/`Bold.ttf` (400/600/700) plus the
+unmodified `OFL.txt`. Six `@font-face` rules added to
+`public/css/style.css` (`font-display: swap`), and `--gl-font-heading`/
+`--gl-font-body` (`:root`) updated to put the real font first with the
+original system stack (Georgia / Bootstrap sans) still behind it as
+fallback — a failed font load degrades to the pre-upgrade look, not a
+blank page.
+
+**Vietnamese glyph coverage — verified, not assumed:** wrote a ~100-line
+Node script (no external font-parsing library) that reads each `.ttf`
+file's binary `cmap` table directly and checks whether 22 representative
+Vietnamese precomposed codepoints (spanning every diacritic combination
+the language uses, plus the specific `à` in "hoàng") resolve to a real
+glyph rather than glyph 0 (`.notdef`). All 6 files (both families, all
+three weights) passed all 22 checks. This was worth doing properly rather
+than trusting Google Fonts' catalogued language list, given the user's
+explicit "MUST render correctly... verify" requirement and that a wrong
+assumption here would only surface as silently-missing accented
+characters in production, not an error anywhere.
+
+**Type scale adjustment:** `--gl-fs-h1`/`h2`/`h3` reduced modestly
+(2.5rem→2.25rem, 2rem→1.875rem, 1.5rem→1.375rem) and a new
+`--gl-ls-heading: -0.01em` added to the shared heading rule, to offset
+Playfair Display's wider default sidebearings versus Georgia and reduce
+the risk of short headings (modal titles, card headers) wrapping to a
+second line where they previously fit on one. No hard overflow risk
+existed (no heading context forces `white-space: nowrap` or a fixed
+narrow width — checked directly), so this is a proactive aesthetic
+mitigation rather than a bug fix. Full reasoning:
+`docs/design-process.md` §5.3 and §9.9.
+
+**Copy sweep:** searched every `.php` file for em dash (`—`) and en dash
+(`–`), both as literal Unicode characters and as HTML entities
+(`&mdash;`/`&ndash;`) — the literal-character search alone would have
+missed most of the real hits, since the app's existing convention is to
+write dashes as entities in HTML output. Found 11 entity occurrences
+total; classified each by hand rather than blanket-replacing:
+
+*Rewritten (6, genuine sentence-joining punctuation):*
+- `index.php` hero `<h1>`: "Authentic Vietnamese dining — reserve your
+  table in seconds." → "Reserve your table for authentic Vietnamese
+  dining in seconds."
+- `auth/login.php` auth-panel tagline: "Authentic Vietnamese dining,
+  reserved in seconds — sign in to manage your table." → "Sign in to
+  manage your table for authentic Vietnamese dining, reserved in
+  seconds."
+- `includes/footer.php` copyright line: "© … Golden Lotus Restaurant —
+  HSB2006 MET4 student project, for academic demonstration only." → "©
+  … Golden Lotus Restaurant, an HSB2006 MET4 student project for
+  academic demonstration only."
+- `admin/dashboard.php` empty pending-queue state: "No pending bookings
+  right now — you're all caught up." → "No pending bookings right now.
+  You're all caught up." — this string is quoted verbatim as the
+  "locked exact wording" in `docs/design-process.md` §7, so that quote
+  was updated to match in the same commit (a narrow, explicitly-flagged
+  exception to "leave `docs/` alone" for this one sweep: it's a wording
+  *contract* the PHP is required to reproduce, not general documentation
+  prose, so leaving the two out of sync would itself be a
+  doc/implementation inconsistency).
+- `customer/dashboard.php` and `customer/book.php`, both the same
+  "`{table_code}` — `{area name}`" label pattern: switched to `&middot;`
+  (already the established separator convention elsewhere in the app,
+  e.g. `index.php`'s area-card descriptions and this same dashboard
+  card's date/time line) rather than inventing a third punctuation style.
+
+*Left unchanged (5, different convention — not prose punctuation):*
+- `index.php`'s opening-hours line, "Daily, 11:00–22:00" — a time range,
+  the same category as the plain-hyphen time ranges elsewhere in the app
+  (e.g. slot labels "11:00-12:30"), just rendered with `&ndash;` instead
+  of a literal hyphen; explicitly out of scope per the task.
+- Four lone `&mdash;` table-cell placeholders (`admin/bookings.php`,
+  `admin/users.php` ×2, `customer/my-reservations.php`) marking an empty
+  notes/phone field or an unavailable action column — a symbolic "no
+  value" glyph (the same role "N/A" or a plain hyphen would play in any
+  data table), not a sentence, so not the AI-writing-tic pattern the
+  sweep was targeting.
+
+Also deliberately left `CLAUDE.md` and `README.md` untouched even though
+both mention the hero tagline/footer copy in prose — both are project/
+repo documentation, not rendered application UI, matching the task's
+"don't touch docs/" carve-out in spirit even though they live at the repo
+root rather than inside `docs/`.
+
+**Verification:** `php -l` on all 6 touched PHP files; a CSS brace-balance
+script check; all 6 `@font-face` URLs fetched from the live server and
+confirmed HTTP 200 with file sizes matching disk; confirmed via the live
+CSS that exactly 6 `@font-face` rules exist and that `body`/`h1`–`h6`
+reference the updated `--gl-font-body`/`--gl-font-heading` tokens (not a
+hardcoded family). Browser-rendered visual confirmation (does a heading
+actually *look* like Playfair Display, does "Duy hoàng" actually paint
+correctly on screen) was not possible — the Chrome extension still would
+not connect this session — so this rests on the cmap-level glyph proof
+above plus the token/URL checks, not a screenshot. Added to the still-open
+item in `docs/remaining-work.md`.
+
 ---
 
 ## AI usage record (interim — finalize in report §12)
@@ -419,6 +524,7 @@ assuming so.
 | P7 (handover) | Claude Code (Claude Sonnet 5) | Test plan, security review, screenshot checklist, viva prep, remaining-work checklist, README, this log | All content in `docs/test-plan.md`, `docs/security-review.md`, `docs/screenshot-checklist.md`, `docs/viva-preparation.md`, `docs/remaining-work.md`, `README.md`, this file | Every claim in these documents is grounded in a specific file/line in the actual codebase (cited inline) rather than generic security-checklist boilerplate — cross-check any claim against the cited file if in doubt; the 43 test cases still need to be **actually executed** (they were written, not run, in this pass — see `docs/remaining-work.md` item 2) |
 | P7.6 (UI polish) | Claude Code (Claude Sonnet 5) | Full presentational UI modernisation pass (tokens, SVG icon system, toasts, gradients, motion, per-page polish) | `includes/icons.php` (new), `public/css/style.css`, `public/js/main.js`, `docs/design-process.md` §9, and every page file (`index.php`, both `auth/*`, all `customer/*`, all `admin/*`, `includes/header.php`/`footer.php`/`listing.php`) | `php -l` on all 18 touched files, `node --check` on the JS, a script-based CSS brace-balance check, and a full live `curl` smoke run repeating the P5/P6/P7 flows end to end with DB-level confirmation of every state change. **Not verified**: browser console errors, visual reduced-motion behaviour, and keyboard-only focus order — the Chrome extension would not connect this session; see this phase's log entry above and `docs/remaining-work.md` for the exact manual check-list still owed |
 | P7.7 (bugfix) | Claude Code (Claude Sonnet 5) | Diagnose and fix the invisible-table-cards regression reported by the user | `public/css/style.css` (5 corrected `animation` shorthands + fail-safe `html.js-ready` restructuring), `public/js/main.js` (`js-enabled`→`js-ready` rename/broadened use), `docs/design-process.md` §9.8, this log | Root cause identified by CSS-grammar reasoning (not guessed) before touching code; user's JS-error hypothesis was checked against every handler in `main.js` and found not to hold, and that was reported plainly rather than fabricating a matching fix. Verified via `node --check`, a CSS brace-balance script, a direct diff of local vs. server-served CSS, and a full live smoke test — during which two mistakes in the verification script itself (not the app) were caught and corrected, see this phase's log entry for detail. Browser-based visual/console confirmation still not possible this session (extension would not connect) |
+| P7.8 (fonts + copy) | Claude Code (Claude Sonnet 5) | Self-hosted webfont integration (Playfair Display + Be Vietnam Pro) and a sweep of user-facing copy for em/en-dash punctuation | `public/fonts/` (reorganised), `public/css/style.css` (`@font-face` + typography tokens), `README.md`, `docs/design-process.md` §5.3/§8/§9.9, and the 6 PHP files with rewritten copy | Vietnamese glyph support verified by parsing each font file's `cmap` table directly (custom Node script, no library) for 22 codepoints rather than trusting the fonts' reputation; `php -l` on all touched PHP; all 6 font URLs fetched live and confirmed 200 with correct sizes; CSS confirmed to reference the updated tokens. **Not verified**: how any of this actually looks rendered — still blocked on the Chrome extension not connecting, same gap as P7.6/P7.7 |
 | P0–P4b | *(unconfirmed)* | — | — | Commits `c81ad32` through `a72fefc` do not carry a `Co-Authored-By: Claude Sonnet 5` git trailer, unlike every commit from P5 onward. This may mean those phases were done without AI assistance, or simply that the trailer wasn't added for those sessions — **confirm which, by hand, before finalizing the report's AI declaration table**, since this log can only report what's observable from git history, not what actually happened in an untracked session. |
 
 **Standing note for the final report:** regardless of which phases used AI

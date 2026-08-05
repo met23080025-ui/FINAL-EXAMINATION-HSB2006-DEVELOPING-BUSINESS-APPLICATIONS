@@ -188,7 +188,7 @@ require __DIR__ . '/../includes/header.php';
                                     class="form-check-input" type="radio" name="table_id"
                                     value="<?= e((string) $table['id']) ?>" required <?= $i === 0 ? 'checked' : '' ?>>
                                 <span class="form-check-label fw-bold">
-                                    <?= e($table['table_code']) ?> &mdash; <?= e(format_area_label($table['area'])) ?>
+                                    <?= e($table['table_code']) ?> &middot; <?= e(format_area_label($table['area'])) ?>
                                 </span>
                             </div>
                             <div class="text-muted small">Seats <?= e((string) $table['capacity']) ?></div>

@@ -142,7 +142,7 @@ require __DIR__ . '/../includes/header.php';
     <?php // Vietnamese: cau chu chinh xac lay tu docs/design-process.md §7 ?>
     <div class="gl-empty-state">
         <div class="gl-empty-icon"><?= svg_lotus_motif() ?></div>
-        <p class="mb-0">No pending bookings right now &mdash; you're all caught up.</p>
+        <p class="mb-0">No pending bookings right now. You're all caught up.</p>
     </div>
 <?php else: ?>
     <div class="table-responsive">

@@ -7,6 +7,65 @@
  * các lớp CSS cụ thể cho từng trang sẽ được thêm dần từ Phase P4b trở đi.
  */
 
+/*
+ * ============================================================================
+ * Phông chữ tự lưu trữ (self-hosted webfonts) — Playfair Display (tiêu đề) và
+ * Be Vietnam Pro (nội dung). File .ttf nằm trong public/fonts/, tải về từ
+ * Google Fonts, giấy phép SIL Open Font License 1.1 (xem OFL.txt trong mỗi
+ * thư mục con và README.md "Third-party assets"). Quyết định đổi từ hệ
+ * font hệ thống (Georgia) sang webfont tự lưu trữ, và vì sao KHÔNG dùng CDN
+ * Google Fonts (khác với lý do §8 ban đầu từ chối Google Fonts): xem
+ * docs/design-process.md §8/§9.9.
+ *
+ * Chỉ nạp 3 độ đậm mỗi phông (400/600/700 - Regular/SemiBold/Bold) vì đó là
+ * toàn bộ những gì hệ thống chữ (§5.3) thực sự dùng đến - không nạp thừa
+ * Black/ExtraBold/Light/Italic... để giữ dung lượng tải trang nhỏ.
+ * font-display: swap để chữ hệ thống hiện ngay trong lúc webfont đang tải
+ * (khong chan hien thi / FOIT), roi tu doi sang webfont khi tai xong.
+ */
+@font-face {
+  font-family: 'Playfair Display';
+  src: url('../fonts/playfair-display/PlayfairDisplay-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Playfair Display';
+  src: url('../fonts/playfair-display/PlayfairDisplay-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Playfair Display';
+  src: url('../fonts/playfair-display/PlayfairDisplay-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  src: url('../fonts/be-vietnam-pro/BeVietnamPro-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  src: url('../fonts/be-vietnam-pro/BeVietnamPro-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  src: url('../fonts/be-vietnam-pro/BeVietnamPro-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Bảng màu thương hiệu Golden Lotus — xem rationale trong docs/design-process.md §5 */
   --gl-primary: #0b5d3b;      /* xanh lục đậm - header, nav, nút chính */
@@ -16,18 +75,33 @@
   --gl-text: #1f2a24;         /* màu chữ chính, gần đen pha xanh lục */
   --gl-bg: #faf8f2;           /* nền trang - trắng ngà ấm, không dùng trắng tinh */
 
-  /* Phông chữ: không dùng webfont ngoài (xem lý do trong docs/design-process.md §7-8) */
-  --gl-font-heading: Georgia, "Times New Roman", serif;
-  --gl-font-body: var(--bs-body-font-family);
+  /*
+   * Phông chữ: tự lưu trữ (self-hosted) tu Phase "Typography upgrade"
+   * (2026-08-05) - xem @font-face o dau file va docs/design-process.md
+   * §8/§9.9 cho quyet dinh day du. Font that (Playfair Display / Be Vietnam
+   * Pro) luon dung TRUOC, chuoi du phong (Georgia/he thong sans) van giu
+   * nguyen phia sau - neu webfont chua tai kip hoac tai that bai, trinh
+   * duyet tu dong lui ve chuoi du phong nay, khong bao gio de trang khong
+   * chu.
+   */
+  --gl-font-heading: 'Playfair Display', Georgia, "Times New Roman", serif;
+  --gl-font-body: 'Be Vietnam Pro', var(--bs-body-font-family);
 
-  /* Thang chữ (typography scale) - xem docs/design-process.md §5.3 */
-  --gl-fs-h1: 2.5rem;
+  /*
+   * Thang chữ (typography scale) - xem docs/design-process.md §5.3, cap
+   * nhat o §9.9. --gl-fs-h1 giam tu 2.5rem xuong 2.25rem va them
+   * --gl-ls-heading (letter-spacing am nhe) khi doi sang Playfair Display:
+   * phong nay co sidebearing (khoang trong quanh moi ky tu) rong hon Georgia
+   * o co chu lon, de gay xuong dong xau hon voi tieu de ngan trong khong
+   * gian hep (vd tieu de modal canh nut dong) neu giu nguyen kich thuoc cu.
+   */
+  --gl-fs-h1: 2.25rem;
   --gl-lh-h1: 1.2;
   --gl-fw-h1: 700;
-  --gl-fs-h2: 2rem;
+  --gl-fs-h2: 1.875rem;
   --gl-lh-h2: 1.25;
   --gl-fw-h2: 700;
-  --gl-fs-h3: 1.5rem;
+  --gl-fs-h3: 1.375rem;
   --gl-lh-h3: 1.3;
   --gl-fw-h3: 600;
   --gl-fs-body: 1rem;
@@ -35,6 +109,7 @@
   --gl-fw-body: 400;
   --gl-fs-small: 0.875rem;
   --gl-lh-small: 1.4;
+  --gl-ls-heading: -0.01em;
 
   /* Thang khoảng cách (spacing scale) - xem docs/design-process.md §5.4 */
   --gl-space-1: 0.25rem;
@@ -114,6 +189,7 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--gl-font-heading);
   color: var(--gl-primary);
+  letter-spacing: var(--gl-ls-heading);
 }
 
 h1 {

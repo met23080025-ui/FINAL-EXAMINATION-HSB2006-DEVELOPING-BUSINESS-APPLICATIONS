@@ -83,7 +83,7 @@ require __DIR__ . '/../includes/header.php';
                 </div>
                 <div>
                     <div class="text-muted small">Table</div>
-                    <div class="fs-5"><?= e($next_reservation['table_code']) ?> &mdash; <?= e(format_area_label($next_reservation['area'])) ?></div>
+                    <div class="fs-5"><?= e($next_reservation['table_code']) ?> &middot; <?= e(format_area_label($next_reservation['area'])) ?></div>
                 </div>
                 <div>
                     <div class="text-muted small">Guests</div>

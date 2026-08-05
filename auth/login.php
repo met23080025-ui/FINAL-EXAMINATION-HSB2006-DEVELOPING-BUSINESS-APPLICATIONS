@@ -123,7 +123,7 @@ require __DIR__ . '/../includes/header.php';
                 <?= svg_lotus_motif('gl-auth-panel-motif') ?>
                 <div>
                     <h2 class="mb-3">Welcome back</h2>
-                    <p class="mb-0">Authentic Vietnamese dining, reserved in seconds &mdash; sign in to manage your table.</p>
+                    <p class="mb-0">Sign in to manage your table for authentic Vietnamese dining, reserved in seconds.</p>
                 </div>
             </div>
         </div>

@@ -45,6 +45,17 @@ the missing input (e.g. "here are our real names, update the docs").
      ring from `docs/design-process.md` §9.3 (green outline + gold glow)
      is visible on every stop, including the toast close button and the
      table-card radio inputs.
+   - **(Added Phase P7.8) Webfonts actually render** — open DevTools
+     Network tab on any page, confirm the 6 `.ttf` requests under
+     `public/fonts/` succeed (not 404, not falling back silently); visually
+     confirm headings render as Playfair Display (not Georgia — compare
+     the distinctive high-contrast serif strokes) and body text as Be
+     Vietnam Pro; specifically check "Duy hoàng" in the navbar (or any
+     Vietnamese name in the seeded data) renders its diacritics correctly,
+     not as a missing-glyph box (`.tofu`). Also confirm no heading wraps
+     awkwardly in a tight space (modal titles, card headers) — this was
+     mitigated in `public/css/style.css` (§5.3/§9.9 of the design doc) but
+     never actually seen rendered.
 
    If anything fails, it's a real bug in the polish pass, not a
    documentation gap — fix it in `public/css/style.css`/`public/js/main.js`

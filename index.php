@@ -54,7 +54,7 @@ require __DIR__ . '/includes/header.php';
 <div class="gl-hero mb-5">
     <?= svg_lotus_motif('gl-hero-motif') ?>
     <div class="gl-hero-content">
-        <h1 class="gl-hero-enter mb-4">Authentic Vietnamese dining &mdash; reserve your table in seconds.</h1>
+        <h1 class="gl-hero-enter mb-4">Reserve your table for authentic Vietnamese dining in seconds.</h1>
 
         <?php // Vietnamese: mot CTA chinh duy nhat (§1 "one primary action per screen") ?>
         <a class="btn btn-light btn-lg px-5 gl-hero-enter gl-hero-enter-delay-1" href="<?= e($book_cta_href) ?>">Book a Table</a>

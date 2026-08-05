@@ -157,7 +157,19 @@ hash looks byte-identical, and why that's expected).
 
 - [Bootstrap 5.3.3](https://getbootstrap.com/) — MIT License, loaded via
   `cdn.jsdelivr.net`, no local copy vendored.
-- No other third-party libraries, icon sets, fonts, or images are used.
+- [Playfair Display](https://fonts.google.com/specimen/Playfair+Display) —
+  SIL Open Font License 1.1, self-hosted (`public/fonts/playfair-display/`,
+  weights 400/600/700 only), used for all headings. Licence text:
+  `public/fonts/playfair-display/OFL.txt`.
+- [Be Vietnam Pro](https://fonts.google.com/specimen/Be+Vietnam+Pro) — SIL
+  Open Font License 1.1, self-hosted (`public/fonts/be-vietnam-pro/`,
+  weights 400/600/700 only), used for all body text — chosen specifically
+  for reliable Vietnamese-diacritic rendering (verified directly against
+  the shipped font files; see `docs/design-process.md` §9.9). Licence
+  text: `public/fonts/be-vietnam-pro/OFL.txt`.
+- No other third-party libraries, icon sets, or images are used. All SVG
+  iconography in the app (`includes/icons.php`) is hand-drawn for this
+  project, not sourced from an icon library.
 
 ## Repository & project management
 

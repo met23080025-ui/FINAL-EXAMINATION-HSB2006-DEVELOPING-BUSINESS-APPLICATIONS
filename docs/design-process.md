@@ -262,25 +262,46 @@ app actually renders:
 
 ### 5.3 Typography scale
 
-No external font is loaded (see §8 for the Google Fonts alternative that was
-rejected). Headings use a system serif stack (`Georgia, 'Times New Roman',
-serif`); body text uses Bootstrap's own default system-UI sans-serif stack.
-Sizes, line-heights, and weights (all as CSS custom properties in
-`style.css`, applied to the actual elements — not just named and left
-unused):
+**Updated 2026-08-05 (Typography upgrade pass) — superseded from a
+system-only stack to self-hosted webfonts; see §9.9 for the full decision
+record, including why this is not the same CDN trade-off §8 originally
+rejected.** Headings use **Playfair Display** (self-hosted, weights
+400/600/700), falling back to the original system serif stack (`Georgia,
+'Times New Roman', serif`) if the webfont fails to load for any reason.
+Body text uses **Be Vietnam Pro** (self-hosted, same three weights),
+falling back to Bootstrap's own default system-UI sans-serif stack. Both
+font stacks are still CSS custom properties in `style.css`
+(`--gl-font-heading`, `--gl-font-body`), applied to the actual elements,
+with the real webfont always listed first and the original fallback stack
+kept intact behind it — a failed font load degrades to the pre-upgrade
+look, never to a blank/invisible page (`font-display: swap` shows the
+fallback immediately while the real font loads in the background).
 
 | Level | Size | Line height | Weight | Font stack |
 |---|---|---|---|---|
-| `h1` | `2.5rem` (40px) | `1.2` | `700` | heading (serif) |
-| `h2` | `2rem` (32px) | `1.25` | `700` | heading (serif) |
-| `h3` | `1.5rem` (24px) | `1.3` | `600` | heading (serif) |
-| body | `1rem` (16px) | `1.5` | `400` | body (system sans) |
-| small | `0.875rem` (14px) | `1.4` | `400` | body (system sans) |
+| `h1` | `2.25rem` (36px) | `1.2` | `700` | heading (Playfair Display → Georgia) |
+| `h2` | `1.875rem` (30px) | `1.25` | `700` | heading (Playfair Display → Georgia) |
+| `h3` | `1.375rem` (22px) | `1.3` | `600` | heading (Playfair Display → Georgia) |
+| body | `1rem` (16px) | `1.5` | `400` | body (Be Vietnam Pro → system sans) |
+| small | `0.875rem` (14px) | `1.4` | `400` | body (Be Vietnam Pro → system sans) |
 
 `h1`/`h2` at 700 weight and ≥24px both independently qualify as "large text"
 under WCAG, which is why the `--gl-accent` restriction in §5.2 is stated as
 an absolute ban rather than "avoid at normal size" — large text alone
 doesn't rescue that pairing (2.28:1 fails even the 3.0:1 large-text bar).
+This still holds at the new `h1`/`h2` sizes (36px/30px, both still ≥24px).
+
+**Why the sizes dropped from the original values (`h1` 2.5rem→2.25rem, `h2`
+2rem→1.875rem, `h3` 1.5rem→1.375rem) and gained `--gl-ls-heading: -0.01em`:**
+Playfair Display's default sidebearings (the built-in space around each
+glyph) run wider than Georgia's at display sizes, which risked short
+headings (modal titles next to a close button, card headings, tile labels)
+wrapping to a second line where they previously fit on one. A small,
+standard mitigation for display serif typefaces — a modest negative
+letter-spacing plus a slightly smaller scale — recovers most of that width
+back without the heading reading as visually "off"; both changes apply
+uniformly via the shared `h1, h2, h3, h4, h5, h6` rule and the `:root`
+scale tokens, not per-page overrides.
 
 ### 5.4 Spacing scale
 
@@ -337,8 +358,15 @@ each page inventing its own phrasing):
 - My Reservations, no bookings at all: *"You have no reservations yet. [Book
   a Table] to get started."* — the bracketed text is a button/link straight
   into `customer/book.php`, not just a passive message.
-- Admin pending queue, nothing pending: *"No pending bookings right now —
-  you're all caught up."*
+- Admin pending queue, nothing pending: *"No pending bookings right now.
+  You're all caught up."* (updated 2026-08-05, typography/copy pass — was
+  originally one dash-joined sentence; split into two short sentences to
+  remove the em dash, per the project's punctuation-style sweep. This is a
+  narrow, deliberate exception to that sweep's "leave `docs/` alone" rule:
+  this specific quoted string is the locked wording contract
+  `admin/dashboard.php` is required to reproduce verbatim, not general
+  documentation prose, so leaving it out of sync with the actual
+  implementation would itself be a doc/implementation inconsistency.)
 - Table-availability search with no results (the `A6` box in
   `activity-booking.mmd`): *"No tables are available for this date, time
   slot, and party size. Try a different date, time, or slot."*
@@ -390,6 +418,16 @@ future path for this booking," not "which actor performs it."
   CDN; also a small extra network request/FOUC risk against NFR-01/NFR-03.
   A system serif/sans pairing achieves a similar "fine dining vs. plain
   Bootstrap" distinction at zero extra cost.
+  **Revisited 2026-08-05 (§9.9):** the specific objection above was the
+  *CDN dependency* (a second external host beyond Bootstrap, plus the
+  network/FOUC cost of fetching from it) — not the fonts themselves. Self-
+  hosting the actual font files under `public/fonts/` removes the CDN
+  dependency entirely (no request ever leaves the app's own server) while
+  still getting the distinctive look this bullet originally wanted, so the
+  project adopted Playfair Display (heading) and Be Vietnam Pro (body) as
+  self-hosted webfonts. This is not a reversal of the reasoning above — it
+  is the same reasoning applied to a delivery mechanism that didn't carry
+  the original cost.
 - **A custom breakpoint system** — rejected in favour of Bootstrap's
   defaults; see §6.
 - **A fully custom design system (no Bootstrap components)** — rejected
@@ -638,3 +676,77 @@ Doing both means a future CSS typo in one of these rules degrades to "the
 element doesn't animate" (still fully visible, just static) rather than
 silently repeating this incident. Full technical writeup, root-cause
 reasoning, and the live verification performed: `docs/development-log.md`.
+
+### 9.9 Typography upgrade — self-hosted Playfair Display + Be Vietnam Pro
+
+**Decision (2026-08-05):** replaced the system-only heading/body font
+stacks (Georgia / Bootstrap's default sans) with two self-hosted webfonts:
+**Playfair Display** for headings, **Be Vietnam Pro** for body text. Both
+are Google Fonts releases under the SIL Open Font License 1.1, downloaded
+as static `.ttf` files and served from `public/fonts/` — no font CDN of
+any kind is contacted at runtime, so this does not reopen the CDN
+objection §8 originally raised against Google Fonts (see the "Revisited"
+note appended to that section). Full third-party licence entry:
+`README.md` "Third-party assets and licences."
+
+**Why these two, specifically:** the project already committed to a
+serif/sans pairing to distinguish the brand from "a Bootstrap template"
+(§5.3's original rationale, still true) — Playfair Display is a
+high-contrast display serif that reads as considerably more "designed"
+than the Georgia fallback it sits behind, and Be Vietnam Pro is a
+grotesque sans specifically designed and maintained by a Vietnamese type
+foundry for reliable Vietnamese-diacritic rendering, which matters
+directly for this application (customer/admin names throughout the
+seeded data and any real usage are Vietnamese, e.g. "Nguyễn Văn An",
+"Vũ Thị Giang", and the navbar's own "Duy hoàng").
+
+**Vietnamese glyph coverage — verified, not assumed:** rather than relying
+on Google Fonts' catalogued language support alone, all three weight files
+for both fonts (400/600/700 = 6 files total) were checked directly by
+parsing each file's `cmap` table (the TrueType structure that maps Unicode
+codepoints to glyphs) for 22 representative Vietnamese precomposed
+characters spanning every diacritic combination the language uses (e.g.
+`ạ` U+1EA1, `ộ` U+1ED9, `ỹ` U+1EF9, `Đ`/`đ` U+0110/U+0111) plus the
+specific character used in "hoàng" (`à` U+00E0). All 6 files map a real
+glyph (not glyph 0, the ".notdef" placeholder) for all 22 test codepoints.
+
+**File selection and cleanup:** both fonts were downloaded from Google
+Fonts as a bundle containing every weight (100–900), italics, and — for
+Playfair Display — both variable-font and static-font versions. Only the
+three static, non-italic weights actually used by the type scale
+(§5.3: 400/600/700) were kept; everything else (Black/ExtraBold/Light/
+Thin/Medium weights, all italics, the variable-font `.ttf` files, Google's
+bundled `README.txt`) was deleted rather than left as unused clutter.
+Final structure:
+```
+public/fonts/
+  playfair-display/
+    PlayfairDisplay-Regular.ttf   (400)
+    PlayfairDisplay-SemiBold.ttf  (600)
+    PlayfairDisplay-Bold.ttf      (700)
+    OFL.txt
+  be-vietnam-pro/
+    BeVietnamPro-Regular.ttf      (400)
+    BeVietnamPro-SemiBold.ttf     (600)
+    BeVietnamPro-Bold.ttf         (700)
+    OFL.txt
+```
+Each `OFL.txt` is the unmodified licence file from its respective Google
+Fonts download (per-font copyright header, standard SIL OFL 1.1 body) —
+kept alongside the font files themselves so the licence travels with the
+asset, not just as a citation in `README.md`.
+
+**Loading strategy:** six `@font-face` rules (one per family/weight pair)
+at the top of `public/css/style.css`, each with `font-display: swap` —
+the fallback stack (Georgia / system sans, §5.3) renders immediately on
+first paint, and the browser swaps to the real webfont once it finishes
+loading, rather than blocking text rendering until the font arrives
+(avoids FOIT — flash of invisible text — which was part of the original
+network-cost concern in §8, now addressed regardless of the CDN question).
+
+**Type-scale adjustment this required:** see §5.3's "why the sizes
+dropped" note — `--gl-fs-h1/h2/h3` reduced modestly and
+`--gl-ls-heading: -0.01em` added, both to offset Playfair Display running
+wider than Georgia at heading sizes and reduce the risk of short headings
+wrapping awkwardly in tight containers (modal titles, card headers, tile
+labels) that fit comfortably on one line under the old font.
